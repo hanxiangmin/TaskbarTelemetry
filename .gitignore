@@ -1,0 +1,24 @@
+bin/
+obj/
+packages/
+lib/
+test-artifacts/
+artifacts/
+store/store-identity.json
+*.user
+*.suo
+*.log
+
+# Local credentials, notification state, and signing material must never ship.
+.env
+.env.*
+auth.json
+*.dpapi
+*.pfx
+*.p12
+serverchan-sendkey.dat
+quota-notification*
+*.local.ini
+
+# Store listing images are generated separately from the current README artwork.
+store/listing-assets/

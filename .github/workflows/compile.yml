@@ -1,0 +1,21 @@
+name: Windows compile
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compile:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Compile application and test sources (not runtime verification)
+        shell: powershell
+        run: .\test.ps1 -SkipDependencies -CompileOnly
+      - name: Compile Store variant (not MSIX certification)
+        shell: powershell
+        run: .\build.ps1 -StoreBuild -OutputDirectory test-artifacts\store-compile
+      - name: Render documentation with synthetic data
+        shell: powershell
+        run: .\generate-readme-artwork.ps1
