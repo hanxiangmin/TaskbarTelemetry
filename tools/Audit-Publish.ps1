@@ -14,7 +14,7 @@ try {
             $failures.Add("Forbidden release file: $relative")
             continue
         }
-        if ([IO.Path]::GetExtension($relative) -notin @('.cs','.ps1','.md','.ini','.json','.html','.xml','.yml','.config')) { continue }
+        if ([IO.Path]::GetExtension($relative) -notin @('.cs','.ps1','.md','.txt','.ini','.json','.html','.xml','.yml','.config')) { continue }
         # Read the exact staged text, not an un-staged working-tree variant.
         $content = (git show ":$relative") -join "`n"
         if ($LASTEXITCODE -ne 0) { throw "Unable to read staged file: $relative" }

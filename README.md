@@ -14,7 +14,9 @@ An open-source **Windows taskbar system monitor** for CPU usage, NVIDIA GPU util
 [![NVIDIA](https://img.shields.io/badge/NVIDIA-1%20%2F%202%20GPUs-76B900?style=flat-square&logo=nvidia&logoColor=white)](#两种布局自动适配)
 [![CSharp](https://img.shields.io/badge/C%23-.NET%20Framework%204.8-8B5CF6?style=flat-square)](#从源码构建)
 [![MIT](https://img.shields.io/badge/License-MIT-22C55E?style=flat-square)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-Source%20Preview-F59E0B?style=flat-square)](docs/VALIDATION.md)
+[![Release](https://img.shields.io/github/v/release/hanxiangmin/TaskbarTelemetry?style=flat-square)](https://github.com/hanxiangmin/TaskbarTelemetry/releases/latest)
+
+### [⬇ 下载 Windows x64 便携版 · 解压即用](https://github.com/hanxiangmin/TaskbarTelemetry/releases/latest/download/TaskbarTelemetry-v1.0.0-windows-x64.zip)
 
 [快速开始](#快速开始) · [界面预览](#两种布局自动适配) · [配置手册](docs/GUIDE.md) · [参与开发](CONTRIBUTING.md) · [反馈问题](https://github.com/hanxiangmin/TaskbarTelemetry/issues)
 
@@ -62,7 +64,15 @@ An open-source **Windows taskbar system monitor** for CPU usage, NVIDIA GPU util
 
 ## 快速开始
 
-**当前是开源源码预览版，尚未提供经过完整桌面回归的稳定 EXE 下载。** 可从源码构建；后续运行包将放在 [Releases](https://github.com/hanxiangmin/TaskbarTelemetry/releases)。已知限制与未完成的验收公开记录在 [VALIDATION](docs/VALIDATION.md)，不会用“编译通过”代替“全部实测通过”。
+### 下载后直接运行
+
+1. 下载 [**TaskbarTelemetry-v1.0.0-windows-x64.zip**](https://github.com/hanxiangmin/TaskbarTelemetry/releases/download/v1.0.0/TaskbarTelemetry-v1.0.0-windows-x64.zip)，不要选 `Source code`。
+2. 右键 ZIP → **全部解压**，保留整个 `TaskbarTelemetry` 文件夹。
+3. 双击 **TaskbarTelemetry.exe**，由你确认 Windows 管理员提示。小工具会出现在任务栏系统托盘左侧，自动识别单卡 / 双卡。
+
+**无需 Visual Studio、.NET SDK 或自己编译。** 运行库已随包附带；系统需要 Windows 10 / 11 x64 和 .NET Framework 4.8。Codex 使用你自己的已登录环境，CPU 温度 / 频率可能需要额外的官方传感器后端。包内 `START-HERE.txt` 有完整操作说明。
+
+这是首个公开可下载版本，兼容性仍在完善。已知限制与未完成的桌面回归见 [VALIDATION](docs/VALIDATION.md)；下载包不代表所有环境均已验收。完整发布说明与校验文件见 [Releases](https://github.com/hanxiangmin/TaskbarTelemetry/releases/latest)。
 
 ### 从源码构建
 

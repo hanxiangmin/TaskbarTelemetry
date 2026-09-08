@@ -19,21 +19,22 @@ $screenshots = Join-Path $projectRoot 'docs\screenshots'
 New-Item -ItemType Directory -Path $screenshots -Force | Out-Null
 
 $rootFiles = @(
-    '.gitignore', 'LICENSE', 'README.md', 'CONTRIBUTING.md', 'SECURITY.md', 'PRIVACY.md', 'PRIVACY.html', 'THIRD_PARTY_NOTICES.md',
+    '.gitignore', '.gitattributes', 'LICENSE', 'README.md', 'START-HERE.txt', 'CONTRIBUTING.md', 'SECURITY.md', 'PRIVACY.md', 'PRIVACY.html', 'THIRD_PARTY_NOTICES.md',
     'TaskbarTelemetry.ini', 'TaskbarTelemetry.exe.config', 'app.manifest', 'app-store.manifest',
     'build.ps1', 'build-store.ps1', 'setup-dependencies.ps1', 'run.ps1', 'test.ps1',
-    'package-release.ps1', 'generate-readme-artwork.ps1', 'generate-store-screenshots.ps1', 'configure-serverchan.ps1'
+    'package-release.ps1', 'package-portable.ps1', 'generate-readme-artwork.ps1', 'generate-store-screenshots.ps1', 'configure-serverchan.ps1'
 )
 foreach ($file in $rootFiles) {
     Copy-Item -LiteralPath (Join-Path $projectRoot $file) -Destination (Join-Path $sourceDirectory $file)
 }
-foreach ($folder in @('src', 'tests', 'docs', 'tools')) {
+foreach ($folder in @('src', 'tests', 'docs', 'tools', 'licenses')) {
     $folderPath = Join-Path $projectRoot $folder
     foreach ($file in Get-ChildItem -LiteralPath $folderPath -Recurse -File) {
         $relative = $file.FullName.Substring($projectRoot.Length + 1)
         $allowed = ($folder -eq 'src' -and $file.Extension -eq '.cs') -or
             ($folder -eq 'tests' -and $file.Extension -eq '.cs') -or
             ($folder -eq 'tools' -and $file.Extension -in @('.cs', '.ini', '.ps1')) -or
+            ($folder -eq 'licenses' -and $file.Extension -in @('.md', '.txt')) -or
             ($folder -eq 'docs' -and ($file.Extension -eq '.md' -or $file.DirectoryName -eq $screenshots))
         if (-not $allowed) { continue }
         $target = Join-Path $sourceDirectory $relative
@@ -73,10 +74,11 @@ foreach ($file in Get-ChildItem -LiteralPath $sourceDirectory -Recurse -File) {
 
 # Always build into a fresh directory so no existing user's INI/state is included.
 & (Join-Path $projectRoot 'build.ps1') -SkipDependencies -OutputDirectory $binaryDirectory
-foreach ($file in @('LICENSE', 'README.md', 'PRIVACY.md', 'THIRD_PARTY_NOTICES.md')) {
+foreach ($file in @('LICENSE', 'README.md', 'START-HERE.txt', 'CONTRIBUTING.md', 'SECURITY.md', 'PRIVACY.md', 'THIRD_PARTY_NOTICES.md')) {
     Copy-Item -LiteralPath (Join-Path $projectRoot $file) -Destination (Join-Path $binaryDirectory $file)
 }
 Copy-Item -LiteralPath (Join-Path $sourceDirectory 'docs') -Destination (Join-Path $binaryDirectory 'docs') -Recurse
+Copy-Item -LiteralPath (Join-Path $sourceDirectory 'licenses') -Destination (Join-Path $binaryDirectory 'licenses') -Recurse
 Compress-Archive -LiteralPath (Join-Path $delivery 'source\TaskbarTelemetry') -DestinationPath (Join-Path $delivery 'TaskbarTelemetry-source.zip')
 Compress-Archive -LiteralPath (Join-Path $delivery 'windows-x64\TaskbarTelemetry') -DestinationPath (Join-Path $delivery 'TaskbarTelemetry-windows-x64.zip')
 $hashLines = foreach ($file in Get-ChildItem -LiteralPath $delivery -Filter '*.zip' -File) {

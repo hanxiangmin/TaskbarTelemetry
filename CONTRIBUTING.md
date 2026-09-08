@@ -50,6 +50,8 @@ Windows 10 / 11 x64，.NET Framework 4.8，PowerShell。生产代码兼容系统
 
 ## 提交与再分发
 
+维护者可在干净 Git 提交上运行 `./package-portable.ps1 -AcknowledgeIncompleteDesktopValidation`，生成便携 ZIP、对应源码 ZIP、校验清单和逐文件清单。这一路径明确记录“完整桌面回归未完成”，只执行编译、依赖与归档内容验证，不运行诊断探针。完整回归仍使用 `test.ps1` / `package-release.ps1`，不能将便携打包成功替代运行测试。
+
 提交 PR 时说明动机、改动、验证结果和未验证项目。不要提交 `bin`、`lib`、`packages`、`test-artifacts`、`artifacts`、私人 Store 身份、运行配置副本、授权记录或密钥。默认配置的通知保持关闭。暂存待发布文件后，可运行 `./tools/Audit-Publish.ps1` 检查暂存内容；模式扫描不能替代人工复核。
 
 Fork 和二次开发遵循根目录 MIT 许可，保留版权与许可证；第三方组件许可证独立适用。建议在衍生版 README 中链接上游并说明修改内容。未经维护者确认，不要将衍生版称为官方版。

@@ -185,7 +185,7 @@ SendKey 不会写入 INI 或日志；应用使用 Windows 当前用户数据保�
 
 运行 `./package-release.ps1`：先构建和测试，再用明确的文件清单生成源码 ZIP、运行包 ZIP 和 SHA-256 清单。只打包默认配置、源码、构建脚本、许可、兼容性文档及演示截图；不包含本机运行状态、密钥、用户路径、Git 历史或开发产物。
 
-兼容边界与尚未完成的真实环境验收见 [兼容性说明](COMPATIBILITY.md) 和 [验收记录](VALIDATION.md)。GitHub 首次公开定位为源码预览，完整桌面回归通过后再发布稳定运行包。
+兼容边界与尚未完成的真实环境验收见 [兼容性说明](COMPATIBILITY.md) 和 [验收记录](VALIDATION.md)。首个可下载便携包由独立 `package-portable.ps1 -AcknowledgeIncompleteDesktopValidation` 从干净 Git 提交构建，执行编译、依赖哈希、默认配置、许可、ZIP 解压与逐文件校验；不执行已被系统阻止的诊断探针，也不宣称其通过。完整回归入口 `package-release.ps1` 仍在测试失败时停止。
 
 ## 许可证
 

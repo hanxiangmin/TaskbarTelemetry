@@ -1,0 +1,35 @@
+TaskbarTelemetry — Windows 任务栏资源监控
+
+使用方法
+1. 右键下载的 ZIP →“全部解压”，不要在压缩包里直接打开 EXE。
+2. 打开解压后的 TaskbarTelemetry 文件夹。
+3. 双击 TaskbarTelemetry.exe，在 Windows 管理员提示中由你确认。
+4. 小工具出现在主任务栏的系统托盘左侧，自动选择单 GPU / 双 GPU 布局。
+5. 鼠标悬停查看详情；右键打开配置、设置通知或退出。
+
+不需要安装 Visual Studio、.NET SDK 或自己编译。请保留整个文件夹，
+尤其是 TaskbarTelemetry.ini、TaskbarTelemetry.exe.config 和 lib 子目录。
+仅支持 Windows 10 / 11 x64，系统需要 .NET Framework 4.8。
+
+额度与硬件
+- CPU、内存与网速不需要登录；NVIDIA GPU 指标需要正常安装显卡驱动。
+- Codex 额度使用你自己的 Codex 登录环境；未登录或无有效快照时不显示额度。
+- Kimi 真实额度暂未接入。
+- CPU 温度 / 频率不可用时显示 --，其他指标仍可使用。
+  可选官方传感器后端说明：https://github.com/hanxiangmin/TaskbarTelemetry#快速开始
+- 不包含或静默安装 PawnIO / 内核驱动；请勿为读取温度关闭安全保护。
+- 通知默认关闭，需要你主动设置自己的 Server酱密钥并同意发送额度信息。
+
+升级
+先在旧版小工具上右键“退出”，再解压新版本到一个新文件夹运行。
+想保留显示设置，可在退出后复制自己的旧 TaskbarTelemetry.ini；不要覆盖旧文件备份。
+若双击没有新窗口，先确认是否已有实例运行。此工具没有独立主窗口。
+
+首次公开版的兼容性仍在完善。托盘箭头、截图遮罩、Explorer 重启以及全部
+Windows / DPI 组合尚未完成完整回归。无签名 EXE 可能被 Windows 策略阻止；
+请保留系统安全保护并反馈提示，不要关闭 Defender 或 Smart App Control 绕过。
+
+下载与更新：https://github.com/hanxiangmin/TaskbarTelemetry/releases/latest
+问题反馈：https://github.com/hanxiangmin/TaskbarTelemetry/issues
+源代码与二次开发：https://github.com/hanxiangmin/TaskbarTelemetry
+本程序采用 MIT License；第三方组件许可见 licenses 和 THIRD_PARTY_NOTICES.md。

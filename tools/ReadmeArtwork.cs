@@ -89,7 +89,7 @@ namespace TaskbarTelemetry
                 Label(g, "自动识别单 / 双卡", 330, 846, 25, Ink, true);
                 Label(g, "任务栏子窗口", 718, 846, 25, Ink, true);
                 Label(g, "MIT 开源", 1110, 846, 25, Ink, true);
-                Label(g, "SOURCE PREVIEW   ·   生产界面绘制 / 演示数值   ·   Kimi 接入待验证", 76, 908, 18, Muted, false);
+                Label(g, "WINDOWS x64 / v1.0.0   ·   生产界面绘制 / 演示数值   ·   Kimi 接入待验证", 76, 908, 18, Muted, false);
             }
             return bitmap;
         }

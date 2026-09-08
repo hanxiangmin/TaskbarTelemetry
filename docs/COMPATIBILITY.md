@@ -34,4 +34,4 @@ Codex 只读取通用额度主窗口，次窗口在提示中列出；不在不�
 
 源码包使用显式允许清单，不打包本地配置副本、真实 SendKey、同意记录、通知计数、缓存、账户资料、桌面截图或打包身份。README 中的图均为演示数据。构建不覆盖已有 INI；发布包在全新目录中用默认 INI 生成。
 
-当前 GitHub 发布为源码预览，未完成项目在 `VALIDATION.md` 中公开保留。稳定运行包发布前仍须完成桌面回归并由维护者确认。无签名 EXE 可能触发 SmartScreen / Smart App Control；不建议关闭 Windows 安全功能绕过。
+GitHub Releases 提供首个公开 Windows x64 便携包；未完成项目在 `VALIDATION.md` 中公开保留，不能理解为全环境验收通过。无签名 EXE 可能触发 SmartScreen / Smart App Control；不建议关闭 Windows 安全功能绕过。

@@ -15,6 +15,13 @@ Microsoft support assemblies needed by the CPU-only path. Unused GUI, storage,
 HID, RAM/SPD, task-scheduler, and plotting assemblies from the upstream release
 are deliberately not redistributed.
 
+License texts are bundled in `licenses/`. Microsoft support assemblies are
+System.Buffers 4.6.1, System.Memory 4.6.3, System.Numerics.Vectors 4.6.1 and
+System.Runtime.CompilerServices.Unsafe 6.1.2 (MIT; Microsoft Corporation,
+all rights reserved). Their source is available from the dotnet/maintenance-packages
+commits linked in `licenses/README.md`. The LibreHardwareMonitor source remains
+available at the v0.9.6 source link above; its MPL-2.0 rights are unchanged.
+
 LibreHardwareMonitor 0.9.6 can use PawnIO. PawnIO is not bundled or silently
 installed by this project. Install only the official restricted, signed PawnIO
 release from https://pawnio.eu/ after reviewing its GPL-2.0 license and special
