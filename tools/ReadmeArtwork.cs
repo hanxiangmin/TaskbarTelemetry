@@ -21,7 +21,7 @@ namespace TaskbarTelemetry
             if (args.Length < 2 || args.Length > 4) return 2;
             // Optional physical-DPI strips support local spacing reviews. They
             // still only draw demonstration values, never run the diagnostic probe.
-            float dpi = args.Length >= 3 ? float.Parse(args[2], System.Globalization.CultureInfo.InvariantCulture) : 192;
+            float dpi = args.Length >= 3 ? float.Parse(args[2], System.Globalization.CultureInfo.InvariantCulture) : 144;
             bool stress = args.Length == 4 && args[3] == "--stress";
             string output = Path.GetFullPath(args[0]);
             Directory.CreateDirectory(output);
@@ -112,22 +112,22 @@ namespace TaskbarTelemetry
                 Label(g, "自动识别单 / 双卡", 330, 846, 25, Ink, true);
                 Label(g, "任务栏子窗口", 718, 846, 25, Ink, true);
                 Label(g, "MIT 开源", 1110, 846, 25, Ink, true);
-                Label(g, "WINDOWS x64 / MAIN 源码预览   ·   生产界面绘制 / 演示数值   ·   Kimi 接入待验证", 76, 908, 18, Muted, false);
+                Label(g, "WINDOWS x64 / v1.0.1   ·   生产界面绘制 / 演示数值   ·   Kimi 接入待验证", 76, 908, 18, Muted, false);
             }
             return bitmap;
         }
 
         private static Bitmap Overview(Bitmap dual, Bitmap single)
         {
-            Bitmap bitmap = new Bitmap(1200, 390, PixelFormat.Format24bppRgb);
+            Bitmap bitmap = new Bitmap(1200, 470, PixelFormat.Format24bppRgb);
             using (Graphics g = Graphics.FromImage(bitmap))
             {
                 Setup(g, bitmap.Size);
                 Label(g, "双 GPU / 520", 48, 23, 22, Cyan, true);
-                Place(g, dual, 72, 68);
-                Label(g, "单 GPU / 476", 48, 191, 22, Violet, true);
-                Place(g, single, 176, 236);
-                Label(g, "生产绘制代码 · 固定演示数值 · 2× 展示", 48, 350, 16, Muted, false);
+                Place(g, dual, 72, 68, 2);
+                Label(g, "单 GPU / 476", 48, 227, 22, Violet, true);
+                Place(g, single, 1112 - single.Width * 2, 276, 2);
+                Label(g, "v1.0.1 · 144 DPI 默认紧凑布局 · 固定演示数值 · 等比例 2× 展示", 48, 438, 16, Muted, false);
             }
             return bitmap;
         }
@@ -152,16 +152,21 @@ namespace TaskbarTelemetry
             }
             Label(g, tag, r.X + 28, r.Y + 22, 22, accent, true);
             Label(g, description, r.X + 28, r.Y + 66, 22, Ink, false);
-            int imageX = r.Right - 36 - strip.Width;
-            Place(g, strip, imageX, r.Y + 103);
+            int imageX = r.Right - 36 - strip.Width * 2;
+            Place(g, strip, imageX, r.Y + 90, 2);
             Label(g, "任务栏 / 两行看全", r.X + 34, r.Y + 142, 17, Muted, false);
         }
 
-        private static void Place(Graphics g, Bitmap bitmap, int x, int y)
+        private static void Place(Graphics g, Bitmap bitmap, int x, int y, int scale)
         {
-            // Explicit pixel units retain all pixels when the strip has 192-DPI metadata.
-            g.DrawImage(bitmap, new Rectangle(x, y, bitmap.Width, bitmap.Height),
+            // Enlarge the actual compact render uniformly, never stretch column
+            // widths independently of the font. Preserve pixels for documentation.
+            GraphicsState state = g.Save();
+            g.InterpolationMode = InterpolationMode.NearestNeighbor;
+            g.PixelOffsetMode = PixelOffsetMode.Half;
+            g.DrawImage(bitmap, new Rectangle(x, y, bitmap.Width * scale, bitmap.Height * scale),
                 0, 0, bitmap.Width, bitmap.Height, GraphicsUnit.Pixel);
+            g.Restore(state);
         }
 
         private static void Label(Graphics g, string text, float x, float y, float pixels, Color color, bool bold)

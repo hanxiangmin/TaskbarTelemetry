@@ -16,13 +16,13 @@ An open-source **Windows taskbar system monitor** for CPU usage, NVIDIA GPU util
 [![MIT](https://img.shields.io/badge/License-MIT-22C55E?style=flat-square)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/hanxiangmin/TaskbarTelemetry?style=flat-square)](https://github.com/hanxiangmin/TaskbarTelemetry/releases/latest)
 
-### [⬇ 下载 Windows x64 便携版 · 解压即用](https://github.com/hanxiangmin/TaskbarTelemetry/releases/latest/download/TaskbarTelemetry-v1.0.0-windows-x64.zip)
+### [⬇ 下载 v1.0.1 Windows x64 便携版 · 解压即用](https://github.com/hanxiangmin/TaskbarTelemetry/releases/download/v1.0.1/TaskbarTelemetry-v1.0.1-windows-x64.zip)
 
 [快速开始](#快速开始) · [界面预览](#两种布局自动适配) · [配置手册](docs/GUIDE.md) · [参与开发](CONTRIBUTING.md) · [反馈问题](https://github.com/hanxiangmin/TaskbarTelemetry/issues)
 
 </div>
 
-> **源码与下载包的区别：** `main` 已包含紧凑布局、Codex 每分钟主动刷新，以及 `Mb` 网速单位 / 去掉前导零的更新。下方图片展示当前源码；Release 下载包仍为 v1.0.0，尚未包含这些更新。
+> **v1.0.1：展示图与下载包已同步。** 本版包含紧凑布局、Codex 每分钟主动刷新，以及 `Mb` 网速单位 / 去掉前导零的更新。[查看更新说明](docs/releases/v1.0.1.md)。旧版保留在发布历史中。
 
 ## 少切一次窗口，多看一眼状态
 
@@ -68,13 +68,13 @@ An open-source **Windows taskbar system monitor** for CPU usage, NVIDIA GPU util
 
 ### 下载后直接运行
 
-1. 下载 [**TaskbarTelemetry-v1.0.0-windows-x64.zip**](https://github.com/hanxiangmin/TaskbarTelemetry/releases/download/v1.0.0/TaskbarTelemetry-v1.0.0-windows-x64.zip)，不要选 `Source code`。
+1. 下载 [**TaskbarTelemetry-v1.0.1-windows-x64.zip**](https://github.com/hanxiangmin/TaskbarTelemetry/releases/download/v1.0.1/TaskbarTelemetry-v1.0.1-windows-x64.zip)，不要选 `Source code`。
 2. 右键 ZIP → **全部解压**，保留整个 `TaskbarTelemetry` 文件夹。
 3. 双击 **TaskbarTelemetry.exe**，由你确认 Windows 管理员提示。小工具会出现在任务栏系统托盘左侧，自动识别单卡 / 双卡。
 
 **无需 Visual Studio、.NET SDK 或自己编译。** 运行库已随包附带；系统需要 Windows 10 / 11 x64 和 .NET Framework 4.8。Codex 使用你自己的已登录环境，CPU 温度 / 频率可能需要额外的官方传感器后端。包内 `START-HERE.txt` 有完整操作说明。
 
-这是首个公开可下载版本，兼容性仍在完善。已知限制与未完成的桌面回归见 [VALIDATION](docs/VALIDATION.md)；下载包不代表所有环境均已验收。完整发布说明与校验文件见 [Releases](https://github.com/hanxiangmin/TaskbarTelemetry/releases/latest)。
+从 v1.0.0 升级时请先退出旧实例，并使用新包的默认配置体验紧凑布局；直接复制旧 INI 可能保留旧版的宽度和 DPI 设置。需要保留偏好时请逐项合并。兼容性仍在完善，已知限制与未完成的桌面回归见 [VALIDATION](docs/VALIDATION.md)；下载包不代表所有环境均已验收。完整发布说明与校验文件见 [Releases](https://github.com/hanxiangmin/TaskbarTelemetry/releases/latest)。
 
 ### 从源码构建
 

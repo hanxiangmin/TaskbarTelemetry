@@ -1,4 +1,4 @@
-TaskbarTelemetry — Windows 任务栏资源监控
+TaskbarTelemetry v1.0.1 — Windows 任务栏资源监控
 
 使用方法
 1. 右键下载的 ZIP →“全部解压”，不要在压缩包里直接打开 EXE。
@@ -22,10 +22,11 @@ TaskbarTelemetry — Windows 任务栏资源监控
 
 升级
 先在旧版小工具上右键“退出”，再解压新版本到一个新文件夹运行。
-想保留显示设置，可在退出后复制自己的旧 TaskbarTelemetry.ini；不要覆盖旧文件备份。
+v1.0.0 升级建议先使用新包默认配置：旧 INI 可能保留较宽的布局和 DPI 设置。
+想保留偏好，请备份旧 TaskbarTelemetry.ini，再逐项合并；不要覆盖旧文件备份。
 若双击没有新窗口，先确认是否已有实例运行。此工具没有独立主窗口。
 
-首次公开版的兼容性仍在完善。托盘箭头、截图遮罩、Explorer 重启以及全部
+当前版本的兼容性仍在完善。托盘箭头、截图遮罩、Explorer 重启以及全部
 Windows / DPI 组合尚未完成完整回归。无签名 EXE 可能被 Windows 策略阻止；
 请保留系统安全保护并反馈提示，不要关闭 Defender 或 Smart App Control 绕过。
 
