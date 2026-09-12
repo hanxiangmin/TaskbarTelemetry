@@ -77,7 +77,8 @@ foreach ($gpuCount in @(0, 1, 2)) {
         $gpu.IsNvidiaDevice = $true
         $gpu.StableId = 'network-display-fixture-' + $i
         $gpu.DisplayIndex = $i
-        $gpu.MemoryUsedBytes = [ulong](999 * 1073741824L)
+        # Use the full CLR name: the ulong alias is unavailable in Windows PowerShell 5.1.
+        $gpu.MemoryUsedBytes = [System.UInt64](999 * 1073741824L)
         $gpu.UsagePercent = 100
         $gpu.TemperatureCelsius = 100
         $snapshot.Gpus.Add($gpu)
