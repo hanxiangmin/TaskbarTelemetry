@@ -23,13 +23,13 @@ namespace TaskbarTelemetry
     {
         internal static float WindowWidth(float configuredDualWidth, bool dual)
         {
-            return configuredDualWidth * (dual ? 1F : 476F / 528F);
+            return configuredDualWidth * (dual ? 1F : 476F / 520F);
         }
 
         internal static float[] ColumnEdges(float width, bool dual)
         {
-            float referenceWidth = dual ? 528F : 476F;
-            return new float[] { 0, width * (dual ? 208 : 140) / referenceWidth,
+            float referenceWidth = dual ? 520F : 476F;
+            return new float[] { 0, width * (dual ? 200 : 140) / referenceWidth,
                 width * (dual ? 408 : 356) / referenceWidth, width };
         }
 
@@ -41,7 +41,7 @@ namespace TaskbarTelemetry
             bool dual = devices.Count >= 2;
             float[] edges = ColumnEdges(size.Width, dual);
             float rowHeight = size.Height / 2F;
-            float layoutScale = size.Width / (dual ? 528F : 476F);
+            float layoutScale = size.Width / (dual ? 520F : 476F);
             float gap = Math.Max(3, 4 * layoutScale);
             float percentWidth = Measure(g, font, "100%");
             float tempWidth = Math.Max(Measure(g, font, "100°"), Measure(g, font, "-99°"));
@@ -52,10 +52,11 @@ namespace TaskbarTelemetry
             float cpuWidth = Measure(g, cpuFont, "WW-WWWWWWW");
             float hardwareLabelWidth = dual ? Math.Max(Measure(g, font, settings.Gpu0Alias), Measure(g, font, settings.Gpu1Alias))
                 : Math.Max(Measure(g, font, "CPU"), Measure(g, font, "GPU"));
-            // Reserve a real gutter by the separator before distributing the rest.
-            // Label rectangles no longer center short names against that separator.
-            float leftInset = (dual ? 5 : 6) * layoutScale;
-            float rightInset = 2 * layoutScale;
+            // Keep both ends of the hardware row away from the separators.
+            // Dual gains only the extra gutter width: its usable content area
+            // stays 193 reference pixels (208 - 8 - 7, formerly 200 - 5 - 2).
+            float leftInset = 8 * layoutScale;
+            float rightInset = 7 * layoutScale;
             float hardwareGap = Math.Max(0, Math.Min(2 * gap,
                 (edges[2] - edges[1] - leftInset - rightInset - hardwareLabelWidth - memoryWidth - percentWidth - tempWidth) / 3F));
             string cpu = CpuModelDetector.ValidateAlias(settings.CpuAlias).PadRight(CpuModelDetector.LabelCharacters);
@@ -113,9 +114,11 @@ namespace TaskbarTelemetry
             }
             if (dual)
             {
-                float tempX = edges[1] - 2 * gap - tempWidth;
-                float percentX = tempX - 2 * gap - percentWidth;
-                Add(slots, "cpu.label", cpu, 2 * gap, rowHeight, cpuWidth, rowHeight, true, StringAlignment.Near);
+                // Tighten the CPU row without shrinking its ten-character label
+                // or the fixed numeric slots. Only GPU outer gutters gained space.
+                float tempX = edges[1] - 6 * layoutScale - tempWidth;
+                float percentX = tempX - gap - percentWidth;
+                Add(slots, "cpu.label", cpu, gap, rowHeight, cpuWidth, rowHeight, true, StringAlignment.Near);
                 Add(slots, "cpu.percent", cpuPercent, percentX, rowHeight, percentWidth, rowHeight, false, StringAlignment.Far);
                 Add(slots, "cpu.temperature", settings.CpuTemperatureEnabled ? cpuTemp : "", tempX, rowHeight, tempWidth, rowHeight, false, StringAlignment.Far);
             }
@@ -132,8 +135,10 @@ namespace TaskbarTelemetry
                 AddNetwork(slots, g, font, "network.upload", "↑", Rate(up), gap, 0, edges[1] - 2 * gap, rowHeight, gap);
                 AddNetwork(slots, g, font, "network.download", "↓", Rate(down), gap, rowHeight, edges[1] - 2 * gap, rowHeight, gap);
             }
-            float quotaPercentX = edges[3] - 2 * gap - percentWidth;
-            float nameWidth = quotaPercentX - edges[2] - 3 * gap;
+            float quotaRightInset = dual ? gap : 2 * gap;
+            float quotaNameGap = dual ? 2 * layoutScale : 2 * gap;
+            float quotaPercentX = edges[3] - quotaRightInset - percentWidth;
+            float nameWidth = quotaPercentX - edges[2] - gap - quotaNameGap;
             Add(slots, "ram.label", "内存", edges[2] + gap, 0, nameWidth, rowHeight, false, StringAlignment.Center);
             Add(slots, "ram.percent", snapshot == null || snapshot.System == null ? "--%" : TaskbarForm.FormatPercent(snapshot.System.MemoryUsagePercent),
                 quotaPercentX, 0, percentWidth, rowHeight, false, StringAlignment.Far);
@@ -181,7 +186,10 @@ namespace TaskbarTelemetry
         {
             float arrowWidth = Measure(g, font, "↑");
             float numberWidth = Math.Max(Measure(g, font, "888.8"), Measure(g, font, "88.88"));
-            float unitWidth = Measure(g, font, "M");
+            float unitWidth = Math.Max(Measure(g, font, "Mb"), Math.Max(Measure(g, font, "Gb"), Measure(g, font, "Tb")));
+            // Reserve a pixel on each end of the fixed cell. At compact physical
+            // widths only the internal gaps shrink for the two-letter units.
+            gap = Math.Max(0, Math.Min(gap, (width - arrowWidth - numberWidth - unitWidth - 2) / 2));
             float start = x + (width - arrowWidth - numberWidth - unitWidth - 2 * gap) / 2;
             int separator = rate.LastIndexOf(' ');
             Add(slots, id + ".arrow", arrow, start, y, arrowWidth, height, false, StringAlignment.Center);
@@ -224,13 +232,15 @@ namespace TaskbarTelemetry
         }
         internal static string Rate(double? bytes)
         {
-            if (!bytes.HasValue || double.IsNaN(bytes.Value) || double.IsInfinity(bytes.Value) || bytes.Value < 0) return "--.-- M";
-            double value = bytes.Value / (1024 * 1024);
-            string unit = "M";
-            if (value >= 999.95) { value /= 1024; unit = "G"; }
-            if (value >= 999.95) { value /= 1024; unit = "T"; }
-            if (value >= 999.95) return ">999 T";
-            return value.ToString(value < 99.995 ? "00.00" : "000.0", CultureInfo.InvariantCulture) + " " + unit;
+            if (!bytes.HasValue || double.IsNaN(bytes.Value) || double.IsInfinity(bytes.Value) || bytes.Value < 0) return "--.-- Mb";
+            // Match speed-test sites: decimal megabits per second, not MiB/s.
+            // Divide first to avoid overflowing even for a finite double.MaxValue.
+            double value = bytes.Value / 125000.0;
+            string unit = "Mb";
+            if (value >= 999.95) { value /= 1000; unit = "Gb"; }
+            if (value >= 999.95) { value /= 1000; unit = "Tb"; }
+            if (value >= 999.95) return ">999 Tb";
+            return value.ToString(value < 99.995 ? "0.00" : "0.0", CultureInfo.InvariantCulture) + " " + unit;
         }
     }
 }

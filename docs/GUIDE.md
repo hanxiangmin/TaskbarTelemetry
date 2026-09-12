@@ -13,22 +13,23 @@
 | 双卡 | 上传＋下载 / CPU | GPU0 / GPU1 | 内存 / AI 剩余 |
 | 单卡 | 上传 / 下载 | CPU＋频率 / GPU＋显存 | 内存 / AI 剩余 |
 
-参考双卡宽度 528，双卡分列 208 / 200 / 120；单卡总宽 476，分列 140 / 216 / 120。配置中的 `ui.width` 是双卡参考宽度，单卡按 476/528 比例缩短，两种布局右侧对齐。图由当前生产绘制代码生成，使用演示数值；不显示尚未接通的 Kimi。
+当前源码双卡宽度 520，双卡分列 200 / 208 / 112；单卡总宽 476，分列 140 / 216 / 120。中间硬件列的左 / 右留白分别为 8 / 7 参考像素，文字不贴分隔线。配置中的 `ui.width` 是双卡参考宽度，单卡按 476/520 比例缩短，两种布局右侧对齐。文档图片由当前生产绘制代码生成，使用演示数值，不显示尚未接通的 Kimi；现有 v1.0.0 下载包尚未包含本次源码更新。
 
 - 单卡只显示普通字体 `CPU` / `GPU`，两者左对齐，不加显卡编号；中间显示频率，如 `3.8 GHz`。频率 / 显存的数值和单位分开定位，GHz / GB 单位均左对齐，使 G 位于同一竖线；名称与数值槽之间最多留 2 个参考像素。双卡仍显示 GPU0 / GPU1（或配置的别名），CPU 名称固定为 10 个 Consolas 字位：2 位系列、横杠、最多 7 位型号；短型号留空，保留后缀。无法可靠缩写则显示 `CPU`，完整型号始终在悬停提示中。
 - 单卡频率来自现有 LibreHardwareMonitor 0.9.6 的核心 Clock 传感器，显示库报告的各核心最高值；不是平均有效频率，也不保证与任务管理器口径一致。排除总线、平均与 Effective 时钟；不会自行用 WMI 标称频率补值。缺少硬件库 / 可用核心传感器 / 权限，或 Store 构建时显示 `-- GHz`，详情在悬停中。上游传感器有自己的硬件回退策略，不能将此显示声明为独立验证过的实时有效频率。
 - NVIDIA 数量依据 NVML 返回的真实 UUID / PCI 身份，核显、虚拟显示器和采集失败占位不计入。温度缺失不改变布局；枚举暂时失败时保留已知身份并清空读数。超过两块只显示排序后的前两块。
 - 显存、占用率、温度、额度名称和百分比分开定位；9% / 100%、Codex / Kimi 切换不改变槽位或分隔线。CPU / GPU 的占用率和温度在单卡模式上下对齐。
-- 网速箭头、数值、单位也独立定位。M / G / T 分别表示 MiB/s / GiB/s / TiB/s；达到量级边界时改单位，避免无限扩张。显存 GB 是 GiB 的紧凑标记，悬停提供精确值。
+- 网速箭头、数值、单位也独立定位。Mb / Gb / Tb 分别表示 Mbps / Gbps / Tbps（比特/秒），与测速网页使用相同的十进制单位；1 Mbps = 125,000 字节/秒，达到量级边界时按 1000 进位，避免无限扩张。网速是所选网卡每秒采样的实时流量，不是一次网页测速的汇总结果。显存 GB 仍是 GiB 的紧凑标记，悬停提供精确值。
+- 网速数字不补前导零，例如 `0.16 Mb`、`1.16 Mb`、`12.16 Mb`；数值保持右对齐，单位、箭头和分隔线位置不随位数变化。
 - CPU 与内存占用使用 Windows 接口；NVIDIA 显存、占用及温度通过驱动 NVML 读取。CPU 温度使用可选 LibreHardwareMonitor 后端。
 - 额度只表示套餐窗口的剩余百分比，不是会话 token 数、API 限速、账单或钱包余额。
 
 ## 直接运行
 
-编译产物位于：
+使用 `run.ps1` 构建 / 启动时，固定运行入口位于：
 
 ```text
-bin\Release\TaskbarTelemetry.exe
+最新版\TaskbarTelemetry.exe
 ```
 
 如果 TrafficMonitor 仍在运行，请先退出它。两个程序默认都会占用系统托盘左侧的同一区域，同时运行会互相覆盖。需要临时并排测试时，可修改 `TaskbarTelemetry.ini` 的 `ui.horizontalOffset`。
@@ -57,12 +58,18 @@ bin\Release\TaskbarTelemetry.exe
 
 ```powershell
 Set-Location .\TaskbarTelemetry
-.\build.ps1
+.\build.ps1 -OutputDirectory .\最新版
 .\test.ps1
 .\run.ps1
 ```
 
 `build.ps1` 会从 LibreHardwareMonitor 官方 GitHub release 下载固定版本的依赖，并校验固定 SHA-256。只发布 CPU 路径所需的 5 个 DLL，运行目录约 1.7 MiB；测试探针单独放在 `test-artifacts`，不会混入正式目录。
+
+仅检查网速格式和固定排版时，可在已允许执行脚本的环境中运行下面的离线检查。它使用演示数据，不启动采集、账户请求、通知或真实任务栏窗口；遇到系统拦截应停止，不修改安全策略绕过。
+
+```powershell
+.\tests\Test-NetworkDisplay.ps1 -Executable .\最新版\TaskbarTelemetry.exe -OutputDirectory .\test-artifacts\network-display
+```
 
 ## Microsoft Store / MSIX
 
@@ -109,8 +116,8 @@ PawnIO 的默认设备权限仅开放给系统和管理员。本地版 TaskbarTe
 | 模式 | 行为 |
 | --- | --- |
 | `local` | 只读扫描最近 Codex 会话 JSONL 尾部的事件行，从 `rate_limits` 快照中保留额度数字。 |
-| `appserver` | 仅使用 OpenAI 文档化的 Codex app-server 协议；失败时不会读取本地会话。需要 `command` 指向可独立运行的 Codex CLI。 |
-| `auto`（默认） | 优先通过 app-server 查询服务器当前额度；尚未取得额度时才回退到本地会话快照。 |
+| `appserver` | 仅使用 OpenAI 文档化的 Codex app-server 协议；失败时不会读取本地会话。自动定位原生 Codex CLI，也可将 `command` 设为其完整 EXE 路径。 |
+| `auto`（默认） | 每分钟通过 app-server 主动查询，同时扫描本地事件；同一额度窗口有更新的本地快照就即时显示，主动通道失败仍保留其原因。 |
 | `off` | 完全关闭 Codex 额度采集。 |
 
 本地模式的准确边界：
@@ -122,14 +129,16 @@ PawnIO 的默认设备权限仅开放给系统和管理员。本地版 TaskbarTe
 
 app-server 模式下，认证和联网由官方 Codex 子进程负责；TaskbarTelemetry 不读取凭据，但会短暂接收协议响应中的账户元数据，最终只保留 plan 类型和额度字段。官方协议说明见 [Codex App Server 文档](https://learn.chatgpt.com/docs/app-server)。
 
-界面中的“剩余”由通用 Codex 额度窗口的 `usedPercent` 计算为 `100 - usedPercent`。程序仍兼容协议中的其他窗口及旧版未标注额度 ID 的快照，但任务栏、鼠标提示和额度通知只使用通用额度，不使用 GPT-5.3-Codex-Spark 的独立额度。`codex.refreshSeconds` 同时控制本地扫描或 app-server 查询频率，当前配置与任务栏重绘均为 1 秒。
+界面中的“剩余”由通用 Codex 额度窗口的 `usedPercent` 计算为 `100 - usedPercent`。程序仍兼容协议中的其他窗口及旧版未标注额度 ID 的快照，但任务栏、鼠标提示和额度通知只使用通用额度，不使用 GPT-5.3-Codex-Spark 的独立额度。当前源码将 `codex.refreshSeconds` 用于联网查询（默认 60 秒，范围 60–240 秒），`codex.localRefreshSeconds` 独立控制本地扫描（默认 1 秒，范围 1–60 秒）。旧配置中的 `refreshSeconds=1` 在读取时提升到 60 秒，不产生每秒一次网络请求；文件本身不自动改写。硬件和界面仍每秒刷新。
+
+默认 `command=codex` 会查找 PATH 中的原生 EXE、当前用户的官方桌面版安装目录及 npm 安装中的原生 CLI，不通过 shell 执行 `.cmd` / `.ps1`，也不启动 WindowsApps GUI 别名。明确填写的 EXE 路径无效时会报错，不静默换成另一个安装；系统阻止启动时同样不会切换程序绕过。若设置 `codex.home`，主动查询和本地扫描均使用该目录，认证仍由官方子进程负责。
 
 ## 多来源额度与 Kimi 验证关卡
 
 - 一个已连接来源固定显示；两个已连接来源每 5 秒原位轮换，悬停暂停，离开后继续。名称和百分比来自同一份快照。
 - 从未取得有效额度的来源不加入轮换；两者都没有时显示“未连接”。已连接来源短暂失败后保留位置，旧值显示“·”并在提示中注明过期；最后一次有效数据满 5 分钟或窗口已重置后显示 `--%`。
 - 提示列出各来源的窗口、重置和更新时间。重新读同一条缓存不会延长其有效期。关闭重启不会把超过五分钟的旧缓存当成新连接。
-- Codex 保留原采集方式。Kimi 发现工作在独立线程，每 60 秒检查，不阻塞每秒硬件采集。通知仍然**只处理 Codex**。
+- Codex 主动查询之间保留一个查询周期加 15 秒宽限，避免正常的 60 秒轮询被误标成过期；每次成功返回，即使百分比不变，也更新真实采集时间。失败后仍受 5 分钟上限约束，不用重新读取日志伪造新时间。Kimi 发现工作在独立线程，每 60 秒检查，不阻塞每秒硬件采集。通知仍然**只处理 Codex**。
 
 **当前 Kimi 实现停留在只读来源验证关卡。** 本机可检测到 Kimi 桌面安装，但没有已验证的账户套餐额度接口；检测到客户端不等于取得额度，因此运行时不会凭空显示 Kimi 数值。没有额外登录、安装或强制连接步骤，也不读取 Cookie、OAuth 凭据、聊天内容或钱包数据。
 
@@ -157,14 +166,14 @@ SendKey 不会写入 INI 或日志；应用使用 Windows 当前用户数据保�
 未打包版编辑与 EXE 同目录的 `TaskbarTelemetry.ini`；MSIX 商店版首次运行会把模板复制到 `%LOCALAPPDATA%\Packages\<PackageFamilyName>\LocalState\TaskbarTelemetry\TaskbarTelemetry.ini`，右键“打开配置文件”会直接打开正确副本。修改后重启程序：
 
 - `monitor.refreshMilliseconds`：系统/GPU/UI 刷新间隔，当前为 1000 ms；
-- `ui.width`：任务栏参考宽度；新配置 `ui.scaleWidthWithDpi=true` 按 DPI 等比放大。旧 INI 缺少该项时保留原来的物理像素宽度；
+- `ui.width`：双卡物理像素宽度，当前源码默认 520；单卡 476。默认 `ui.scaleWidthWithDpi=false`。显式设置 `true` 才按 96-DPI 基准放大宽度；150% 下 520 会变为 780。v1.0.0 用户将此项改为 `false` 后可恢复该版原有的 528 / 476 紧凑宽度；新源码另将双卡收窄 8 像素并保留中列分隔线留白，尚未包含于 v1.0.0 下载包；
 - `ui.horizontalOffset`、`ui.verticalOffset`：位置微调；
 - `ui.fontFamily`、`ui.fontSize`、`ui.foreground`、`ui.background`：字体与颜色；
 - `network.interfaceId`：留空自动汇总，填写网卡 ID 可固定；
 - `cpu.alias`：留空时通过 Windows WMI 自动识别并缩短 CPU 型号，也可填写同样满足 2+1+7 规则的标签手动覆盖；
 - `gpu.alias0`、`gpu.alias1`：两张卡的短标签，当前为 GPU0/GPU1；
 - `temperature.enabled`、`temperature.libreHardwareMonitorLibrary`：非商店版 CPU 温度开关与库路径；商店构建强制关闭；
-- `codex.mode`、`codex.command`、`codex.home`、`codex.refreshSeconds`：Codex 采集方式，当前刷新间隔为 1 秒。
+- `codex.mode`、`codex.command`、`codex.home`：Codex 采集方式与安装位置；`codex.refreshSeconds=60` 为主动查询周期，`codex.localRefreshSeconds=1` 为本地扫描周期。
 - `notification.enabled`：是否启用 Server酱手机通知；
 - `notification.thresholdPercent`：提醒步长，当前为每消耗 10%；
 - `notification.dailyRequestLimit`：本地每日最多请求数，默认 5，`0` 表示不作本地限制；

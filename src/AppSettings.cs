@@ -9,6 +9,7 @@ namespace TaskbarTelemetry
     {
         public int RefreshIntervalMilliseconds { get; private set; }
         public int CodexRefreshSeconds { get; private set; }
+        public int CodexLocalRefreshSeconds { get; private set; }
         public int TaskbarWidth { get; private set; }
         public bool ScaleWidthWithDpi { get; private set; }
         public int HorizontalOffset { get; private set; }
@@ -34,9 +35,11 @@ namespace TaskbarTelemetry
         private AppSettings()
         {
             RefreshIntervalMilliseconds = 1000;
-            CodexRefreshSeconds = 1;
-            TaskbarWidth = 528;
-            ScaleWidthWithDpi = true;
+            CodexRefreshSeconds = 60;
+            CodexLocalRefreshSeconds = 1;
+            TaskbarWidth = 520;
+            // Keep the compact physical-pixel footprint unless scaling is requested.
+            ScaleWidthWithDpi = false;
             HorizontalOffset = 0;
             VerticalOffset = 0;
             FontSizePoints = 8.5f;
@@ -71,7 +74,10 @@ namespace TaskbarTelemetry
 
             Dictionary<string, string> values = ParseIni(path);
             settings.RefreshIntervalMilliseconds = GetInt(values, "monitor.refreshMilliseconds", settings.RefreshIntervalMilliseconds, 500, 10000);
-            settings.CodexRefreshSeconds = GetInt(values, "codex.refreshSeconds", settings.CodexRefreshSeconds, 1, 3600);
+            // Old INIs used 1 s for both logs and network. Keep that local cadence
+            // but never turn it into one authenticated network query per second.
+            settings.CodexRefreshSeconds = GetInt(values, "codex.refreshSeconds", settings.CodexRefreshSeconds, 60, 240);
+            settings.CodexLocalRefreshSeconds = GetInt(values, "codex.localRefreshSeconds", settings.CodexLocalRefreshSeconds, 1, 60);
             settings.TaskbarWidth = GetInt(values, "ui.width", settings.TaskbarWidth, 360, 900);
             // Old INIs used physical pixels. Preserve their on-screen footprint.
             settings.ScaleWidthWithDpi = GetBool(values, "ui.scaleWidthWithDpi", false);

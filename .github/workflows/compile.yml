@@ -16,6 +16,9 @@ jobs:
       - name: Compile Store variant (not MSIX certification)
         shell: powershell
         run: .\build.ps1 -StoreBuild -OutputDirectory test-artifacts\store-compile
+      - name: Check network formatting and fixed layout (synthetic data, no desktop or accounts)
+        shell: powershell
+        run: .\tests\Test-NetworkDisplay.ps1 -Executable .\test-artifacts\release\TaskbarTelemetry.exe -OutputDirectory .\test-artifacts\network-display
       - name: Render documentation with synthetic data
         shell: powershell
         run: .\generate-readme-artwork.ps1

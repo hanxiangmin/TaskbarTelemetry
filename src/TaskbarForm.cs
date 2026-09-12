@@ -442,9 +442,9 @@ namespace TaskbarTelemetry
         internal static string BuildNetworkText(TelemetrySnapshot snapshot)
         {
             if (snapshot == null || snapshot.System == null)
-                return "↑ --.--  ↓ --.-- MB/s";
-            return "↑ " + FormatRate(snapshot.System.UploadBytesPerSecond) +
-                   "  ↓ " + FormatRate(snapshot.System.DownloadBytesPerSecond) + " MB/s";
+                return "↑ --.-- Mb  ↓ --.-- Mb";
+            return "↑ " + TaskbarRenderer.Rate(snapshot.System.UploadBytesPerSecond) +
+                   "  ↓ " + TaskbarRenderer.Rate(snapshot.System.DownloadBytesPerSecond);
         }
 
         internal static string BuildCpuText(TelemetrySnapshot snapshot, string alias)
@@ -474,8 +474,8 @@ namespace TaskbarTelemetry
             if (double.IsNaN(bytesPerSecond) || double.IsInfinity(bytesPerSecond) || bytesPerSecond < 0.0)
                 return "--.--";
 
-            double megabytesPerSecond = bytesPerSecond / (1024.0 * 1024.0);
-            return megabytesPerSecond.ToString("00.00", CultureInfo.InvariantCulture);
+            double megabitsPerSecond = bytesPerSecond / 125000.0;
+            return megabitsPerSecond.ToString("0.00", CultureInfo.InvariantCulture);
         }
 
         internal static string FormatPercent(double value)
@@ -552,7 +552,7 @@ namespace TaskbarTelemetry
                 builder.Append("  " + snapshot.CpuFrequency.SensorName);
                 AppendStatus(builder, snapshot.CpuFrequency.Status);
             }
-            builder.Append("\r\n网速单位: M / G / T = MiB/s / GiB/s / TiB/s");
+            builder.Append("\r\n网速单位: Mb / Gb / Tb = Mbps / Gbps / Tbps（比特/秒，与测速网页一致；1000 进位）");
             builder.Append("\r\n额度右侧 · 表示数据过期；悬停期间暂停轮换");
             int gpuCount = GpuTopology.Devices(snapshot.Gpus).Count;
             builder.Append("\r\nNVIDIA 设备: " + gpuCount.ToString(CultureInfo.InvariantCulture));
@@ -608,6 +608,7 @@ namespace TaskbarTelemetry
                 }
             }
 
+            builder.Append("\r\nCodex 刷新：主动查询 " + settings.CodexRefreshSeconds + " 秒 / 本地记录 " + settings.CodexLocalRefreshSeconds + " 秒");
             if (snapshot.Quotas != null)
                 foreach (ProviderQuotaMetric quota in snapshot.Quotas)
                 {

@@ -15,6 +15,7 @@ namespace TaskbarTelemetry
         public DateTime? UpdatedAtLocal { get; set; }
         public QuotaConnectionState State { get; set; }
         public bool HasConnected { get; set; }
+        public int FreshForSeconds { get; set; }
         public double? RemainingPercent
         {
             get { return State == QuotaConnectionState.Expired || Primary == null ? null : Primary.RemainingPercent; }
@@ -22,6 +23,7 @@ namespace TaskbarTelemetry
         public ProviderQuotaMetric(string id, string name)
         {
             ProviderId = id; Name = name; Status = "未连接";
+            FreshForSeconds = id == "kimi" ? 75 : 15;
             Windows = new List<QuotaWindowMetric>();
         }
 
@@ -34,6 +36,7 @@ namespace TaskbarTelemetry
             if (metric.Secondary != null) result.Windows.Add(metric.Secondary);
             result.UpdatedAtLocal = metric.UpdatedAtLocal;
             result.Status = metric.Status;
+            result.FreshForSeconds = Math.Min(285, Math.Max(15, metric.RefreshIntervalSeconds + 15));
             return result;
         }
     }
@@ -55,11 +58,13 @@ namespace TaskbarTelemetry
             if (lastGood == null) return result;
             result.HasConnected = true;
             result.UpdatedAtLocal = lastGood.UpdatedAtLocal;
+            result.FreshForSeconds = lastGood.FreshForSeconds;
             result.Primary = lastGood.Primary;
             result.Windows = new List<QuotaWindowMetric>(lastGood.Windows);
             double age = (now - lastGood.UpdatedAtLocal.Value).TotalSeconds;
-            // Codex normally refreshes at 1 s, Kimi at 60 s. Give each one poll of grace.
-            double freshSeconds = sample.ProviderId == "kimi" ? 75 : 15;
+            // Active queries get one poll interval plus 15 s grace. Local event
+            // timestamps remain unchanged; rereading logs never extends the TTL.
+            double freshSeconds = lastGood.FreshForSeconds;
             bool resetPassed = lastGood.Primary.ResetsAtLocal.HasValue && lastGood.Primary.ResetsAtLocal.Value <= now;
             result.State = age >= 300 || resetPassed ? QuotaConnectionState.Expired :
                 (!currentWindow || age > freshSeconds ? QuotaConnectionState.Stale : QuotaConnectionState.Connected);

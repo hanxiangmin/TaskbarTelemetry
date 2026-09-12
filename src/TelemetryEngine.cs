@@ -221,17 +221,8 @@ namespace TaskbarTelemetry
                         appServerMetric = codexCollector.GetSnapshot();
                     }
 
-                    if (appServerMetric != null &&
-                        (appServerMetric.Primary != null || appServerMetric.Secondary != null))
-                        snapshot.Codex = appServerMetric;
-                    else if (codexSessionCollector != null)
-                        snapshot.Codex = codexSessionCollector.Collect();
-                    else
-                    {
-                        snapshot.Codex = appServerMetric ?? new CodexMetric();
-                        if (string.IsNullOrWhiteSpace(snapshot.Codex.Status))
-                            snapshot.Codex.Status = "Codex app-server has not returned a quota snapshot";
-                    }
+                    CodexMetric localMetric = codexSessionCollector == null ? null : codexSessionCollector.Collect();
+                    snapshot.Codex = CodexQuotaSourceSelector.Select(appServerMetric, localMetric, DateTime.Now);
                 }
             }
             catch (Exception ex)

@@ -32,7 +32,7 @@ foreach ($folder in @('src', 'tests', 'docs', 'tools', 'licenses')) {
     foreach ($file in Get-ChildItem -LiteralPath $folderPath -Recurse -File) {
         $relative = $file.FullName.Substring($projectRoot.Length + 1)
         $allowed = ($folder -eq 'src' -and $file.Extension -eq '.cs') -or
-            ($folder -eq 'tests' -and $file.Extension -eq '.cs') -or
+            ($folder -eq 'tests' -and $file.Extension -in @('.cs', '.ps1')) -or
             ($folder -eq 'tools' -and $file.Extension -in @('.cs', '.ini', '.ps1')) -or
             ($folder -eq 'licenses' -and $file.Extension -in @('.md', '.txt')) -or
             ($folder -eq 'docs' -and ($file.Extension -eq '.md' -or $file.DirectoryName -eq $screenshots))

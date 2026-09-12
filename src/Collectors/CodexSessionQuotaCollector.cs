@@ -42,7 +42,7 @@ namespace TaskbarTelemetry
         public CodexSessionQuotaCollector(AppSettings settings)
             : this(
                 ResolveCodexHome(settings),
-                TimeSpan.FromSeconds(settings == null ? 60 : settings.CodexRefreshSeconds))
+                TimeSpan.FromSeconds(settings == null ? 1 : settings.CodexLocalRefreshSeconds))
         {
         }
 

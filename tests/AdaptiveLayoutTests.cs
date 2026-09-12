@@ -15,14 +15,51 @@ namespace TaskbarTelemetry
         internal static bool Run()
         {
             CheckCpuNames();
+            CheckCompactDefaults();
             CheckCoreClocks();
+            CheckNetworkRates();
             CheckTopology();
             CheckQuotas();
+            CheckActiveQuotaPolling();
             CheckRendering();
             CheckQuotaRendering();
             CreateOverview();
             Console.WriteLine("ADAPTIVE assertions={0} failures={1}", assertions, failures);
             return failures == 0;
+        }
+
+        private static void CheckNetworkRates()
+        {
+            Check("Mbps zero", TaskbarRenderer.Rate(0) == "0.00 Mb");
+            Check("Mbps below one without padding", TaskbarRenderer.Rate(0.16 * 125000) == "0.16 Mb");
+            Check("Mbps single digit without padding", TaskbarRenderer.Rate(1.16 * 125000) == "1.16 Mb");
+            Check("Mbps two digits retained", TaskbarRenderer.Rate(12.16 * 125000) == "12.16 Mb");
+            Check("Mbps decimal not binary", TaskbarRenderer.Rate(1000000) == "8.00 Mb");
+            Check("speed test upload", TaskbarRenderer.Rate(93.57 * 125000) == "93.57 Mb");
+            Check("speed test download", TaskbarRenderer.Rate(92.88 * 125000) == "92.88 Mb");
+            Check("old MiB reading becomes Mbps", TaskbarRenderer.Rate(11.74 * 1048576) == "98.48 Mb");
+            Check("three digit Mbps", TaskbarRenderer.Rate(100 * 125000) == "100.0 Mb");
+            Check("before Gbps boundary", TaskbarRenderer.Rate(999.94 * 125000) == "999.9 Mb");
+            Check("rounded Gbps boundary", TaskbarRenderer.Rate(999.95 * 125000) == "1.00 Gb");
+            Check("Gbps decimal boundary", TaskbarRenderer.Rate(125000000) == "1.00 Gb");
+            Check("Tbps decimal boundary", TaskbarRenderer.Rate(125000000000) == "1.00 Tb");
+            Check("finite extreme capped", TaskbarRenderer.Rate(double.MaxValue) == ">999 Tb");
+            foreach (double? invalid in new double?[] { null, -1, double.NaN, double.PositiveInfinity, double.NegativeInfinity })
+                Check("invalid network placeholder", TaskbarRenderer.Rate(invalid) == "--.-- Mb");
+        }
+
+        private static void CheckCompactDefaults()
+        {
+            AppSettings defaults = AppSettings.Load(string.Empty);
+            Check("clean defaults use compact physical width", defaults.TaskbarWidth == 520 &&
+                !defaults.ScaleWidthWithDpi && defaults.FontSizePoints == 8.5f);
+            Check("dual has separator gutters while single footprint is unchanged", TaskbarRenderer.WindowWidth(defaults.TaskbarWidth, true) == 520 &&
+                TaskbarRenderer.WindowWidth(defaults.TaskbarWidth, false) == 476);
+            string templatePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TaskbarTelemetry.ini");
+            Check("release template is present for layout regression", File.Exists(templatePath));
+            AppSettings releaseDefaults = AppSettings.Load(templatePath);
+            Check("release INI and no-file defaults agree on compact layout", releaseDefaults.TaskbarWidth == defaults.TaskbarWidth &&
+                releaseDefaults.ScaleWidthWithDpi == defaults.ScaleWidthWithDpi && releaseDefaults.FontSizePoints == defaults.FontSizePoints);
         }
 
         private static void CheckCpuNames()
@@ -133,6 +170,40 @@ namespace TaskbarTelemetry
             Check("Kimi alone fixed", rotation.Select(sources, TimeSpan.FromSeconds(106)).Name == "Kimi");
         }
 
+        private static void CheckActiveQuotaPolling()
+        {
+            AppSettings settings = AppSettings.Load(string.Empty);
+            Check("separate active and local cadence", settings.CodexRefreshSeconds == 60 && settings.CodexLocalRefreshSeconds == 1);
+            DateTime now = new DateTime(2026, 9, 9, 10, 0, 0);
+            CodexMetric live = new CodexMetric { UpdatedAtLocal = now, RefreshIntervalSeconds = 60,
+                Primary = new QuotaWindowMetric { UsedPercent = 46, WindowDurationMinutes = 10080, ResetsAtLocal = now.AddDays(6) } };
+            QuotaHistory history = new QuotaHistory();
+            ProviderQuotaMetric sample = ProviderQuotaMetric.FromCodex(live);
+            history.Observe(sample, now);
+            Check("minute polling stays fresh between reads", history.Observe(sample, now.AddSeconds(60)).State == QuotaConnectionState.Connected);
+            Check("missed poll becomes stale after grace", history.Observe(sample, now.AddSeconds(76)).State == QuotaConnectionState.Stale);
+            Check("live failures retain five-minute hard expiry", history.Observe(sample, now.AddSeconds(300)).State == QuotaConnectionState.Expired);
+            // A successful unchanged value is still a newly verified snapshot.
+            live.UpdatedAtLocal = now.AddSeconds(301);
+            Check("unchanged live percent recovers", history.Observe(ProviderQuotaMetric.FromCodex(live), now.AddSeconds(301)).RemainingPercent == 54);
+
+            CodexMetric local = new CodexMetric { UpdatedAtLocal = now.AddSeconds(302), Primary = live.Primary, Status = "local" };
+            Check("newer matching local event updates immediately", CodexQuotaSourceSelector.Select(live, local, now.AddSeconds(302)) == local);
+            live.UpdatedAtLocal = now.AddSeconds(303);
+            Check("fresh live query beats older logs", CodexQuotaSourceSelector.Select(live, local, now.AddSeconds(303)) == live);
+            live.UpdatedAtLocal = now.AddMinutes(-10);
+            Check("stale live snapshot cannot mask fresh logs", CodexQuotaSourceSelector.Select(live, local, now.AddSeconds(303)) == local);
+            CodexMetric failed = new CodexMetric { Status = "CLI not found" };
+            Check("fallback preserves active error", CodexQuotaSourceSelector.Select(failed, local, now.AddSeconds(303)).Status.Contains("CLI not found"));
+
+            // Explicit invalid overrides must fail, not silently launch another CLI.
+            typeof(AppSettings).GetProperty("CodexCommand").SetValue(settings, "missing-cli-for-layout-test.exe", null);
+            bool rejected = false;
+            try { CodexExecutableLocator.Resolve(settings); }
+            catch (FileNotFoundException) { rejected = true; }
+            Check("missing explicit native CLI is reported", rejected);
+        }
+
         private static void CheckRendering()
         {
             string directory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "layouts");
@@ -144,7 +215,7 @@ namespace TaskbarTelemetry
             foreach (bool dark in new bool[] { true, false })
             {
                 float scale = dpi / 96F;
-                Size size = new Size((int)Math.Round(TaskbarRenderer.WindowWidth(528 * scale, gpuCount >= 2)), (int)(40 * scale));
+                Size size = new Size((int)Math.Round(TaskbarRenderer.WindowWidth(520 * scale, gpuCount >= 2)), (int)(40 * scale));
                 using (Bitmap bitmap = new Bitmap(size.Width, size.Height))
                 {
                     bitmap.SetResolution(dpi, dpi);
@@ -161,9 +232,18 @@ namespace TaskbarTelemetry
                         Check("fixed slots " + gpuCount + " GPU / DPI " + dpi, stable);
                         Check("text fits " + gpuCount + " GPU / DPI " + dpi, Fits(g, b, font, cpuFont, size));
                         float[] edges = TaskbarRenderer.ColumnEdges(size.Width, gpuCount >= 2);
-                        Check("column contract", Math.Abs(edges[1] / scale - (gpuCount >= 2 ? 208 : 140)) < 0.01 &&
+                        Check("column contract", Math.Abs(edges[1] / scale - (gpuCount >= 2 ? 200 : 140)) < 0.01 &&
                             Math.Abs(edges[2] / scale - (gpuCount >= 2 ? 408 : 356)) < 0.01 &&
-                            Math.Abs(edges[3] / scale - (gpuCount >= 2 ? 528 : 476)) < 0.01);
+                            Math.Abs(edges[3] / scale - (gpuCount >= 2 ? 520 : 476)) < 0.01);
+                        foreach (RenderSlot slot in b)
+                        {
+                            bool hardware = slot.Id.StartsWith("gpu", StringComparison.Ordinal) ||
+                                (gpuCount < 2 && slot.Id.StartsWith("cpu", StringComparison.Ordinal));
+                            if (hardware)
+                                Check("hardware separator clearance " + slot.Id,
+                                    slot.Bounds.Left >= edges[1] + 8 * scale - 0.1F &&
+                                    slot.Bounds.Right <= edges[2] - 7 * scale + 0.1F);
+                        }
                         Check("CPU label matches layout", gpuCount >= 2 ?
                             Slot(b, "cpu.label").Text.TrimEnd() == "R9-9950X3D" && Slot(b, "cpu.label").CpuFont :
                             Slot(b, "cpu.label").Text == "CPU" && !Slot(b, "cpu.label").CpuFont &&
@@ -183,7 +263,10 @@ namespace TaskbarTelemetry
                         }
                         if (gpuCount >= 2)
                         {
-                            Check("GPU label separator gutter", Slot(b, "gpu0.label").Bounds.X - edges[1] >= 5 * scale - 0.1F &&
+                            Check("dual usable hardware width preserved", Math.Abs((edges[2] - edges[1]) / scale - 15 - 193) < 0.01);
+                            Check("CPU percent-temperature gap tightened", Math.Abs((Slot(b, "cpu.temperature").Bounds.Left -
+                                Slot(b, "cpu.percent").Bounds.Right) / scale - 4) < 0.01);
+                            Check("GPU label separator gutter", Slot(b, "gpu0.label").Bounds.X - edges[1] >= 8 * scale - 0.1F &&
                                 Slot(b, "gpu0.label").Bounds.X == Slot(b, "gpu1.label").Bounds.X);
                             Check("dual GPU labels unchanged", Slot(b, "gpu0.label").Text == settings.Gpu0Alias && Slot(b, "gpu1.label").Text == settings.Gpu1Alias);
                         }
@@ -224,7 +307,7 @@ namespace TaskbarTelemetry
                     if (dual) { sample.Gpus[1].MemoryUsedBytes = 3UL * 1024 * 1024 * 1024; sample.Gpus[1].UsagePercent = 12; }
                     ProviderQuotaMetric quota = new QuotaHistory().Observe(Quota(dual ? "codex" : "kimi", dual ? 8 : 36, DateTime.Now), DateTime.Now);
                     page.DrawString((dual ? "双卡" : "单卡") + (dark ? " · 深色" : " · 浅色"), caption, Brushes.DimGray, 26, 79 + row * 68);
-                    using (Bitmap strip = new Bitmap((int)Math.Round(TaskbarRenderer.WindowWidth(792, dual)), 60))
+                    using (Bitmap strip = new Bitmap((int)Math.Round(TaskbarRenderer.WindowWidth(780, dual)), 60))
                     {
                         strip.SetResolution(144, 144);
                         using (Graphics g = Graphics.FromImage(strip))
@@ -233,12 +316,12 @@ namespace TaskbarTelemetry
                             g.Clear(dark ? Color.FromArgb(31, 34, 39) : Color.FromArgb(238, 238, 238));
                             TaskbarRenderer.Draw(g, strip.Size, font, dark ? Color.White : Color.FromArgb(26, 26, 26), settings, sample, quota);
                         }
-                        page.DrawImageUnscaled(strip, 160 + 792 - strip.Width, 60 + row * 68);
+                        page.DrawImageUnscaled(strip, 160 + 780 - strip.Width, 60 + row * 68);
                         strip.Save(Path.Combine(directory, (dual ? "dual" : "single") + "-" + (dark ? "dark" : "light") + ".png"));
                     }
                 }
                 page.DrawString("生产绘制代码 · 演示数据；Kimi 仅为轮换示例，尚未通过真实账户核对。", caption, Brushes.DimGray, 26, 346);
-                page.DrawString("双卡 528（208/200/120） · 单卡 476（140/216/120）；M = MiB/s。", caption, Brushes.DimGray, 26, 371);
+                page.DrawString("双卡 520（200/208/112） · 单卡 476（140/216/120）；Mb = Mbps。", caption, Brushes.DimGray, 26, 371);
                 canvas.Save(Path.Combine(directory, "layout-overview.png"));
             }
         }
@@ -254,7 +337,7 @@ namespace TaskbarTelemetry
                 history.Observe(new ProviderQuotaMetric("codex", "Codex"), now.AddMinutes(2)),
                 history.Observe(new ProviderQuotaMetric("codex", "Codex"), now.AddMinutes(6)) };
             foreach (int gpuCount in new int[] { 0, 1, 2 })
-            using (Bitmap bitmap = BitmapAtDpi((int)Math.Round(TaskbarRenderer.WindowWidth(528, gpuCount >= 2)), 40, 96))
+            using (Bitmap bitmap = BitmapAtDpi((int)Math.Round(TaskbarRenderer.WindowWidth(520, gpuCount >= 2)), 40, 96))
             using (Graphics g = Graphics.FromImage(bitmap))
             using (Font font = new Font(settings.FontFamily, settings.FontSizePoints))
             using (Font cpuFont = new Font("Consolas", settings.FontSizePoints))
@@ -282,7 +365,7 @@ namespace TaskbarTelemetry
                 }
             }
             foreach (int gpuCount in new int[] { 0, 1, 2 })
-            using (Bitmap bitmap = BitmapAtDpi((int)Math.Round(TaskbarRenderer.WindowWidth(528, gpuCount >= 2)), 60, 144))
+            using (Bitmap bitmap = BitmapAtDpi((int)Math.Round(TaskbarRenderer.WindowWidth(520, gpuCount >= 2)), 60, 144))
             using (Graphics g = Graphics.FromImage(bitmap))
             using (Font font = new Font(settings.FontFamily, settings.FontSizePoints))
             using (Font cpuFont = new Font("Consolas", settings.FontSizePoints))

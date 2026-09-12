@@ -32,7 +32,7 @@ namespace TaskbarTelemetry
                 bool gpuOk = snapshot != null && snapshot.Gpus != null;
                 bool codexOk = snapshot != null && snapshot.Codex != null && snapshot.Quotas.Count == 2;
                 bool cpuLabelOk = !string.IsNullOrWhiteSpace(settings.CpuAlias);
-                bool refreshOk = settings.RefreshIntervalMilliseconds == 1000 && settings.CodexRefreshSeconds == 1;
+                bool refreshOk = settings.RefreshIntervalMilliseconds == 1000 && settings.CodexRefreshSeconds == 60 && settings.CodexLocalRefreshSeconds == 1;
                 bool formattingOk = CheckDisplayFormatting();
                 formattingOk &= AdaptiveLayoutTests.Run();
                 bool codexSelectionOk = CheckCodexQuotaSelection();
@@ -438,9 +438,11 @@ namespace TaskbarTelemetry
         private static bool CheckDisplayFormatting()
         {
             bool ok = true;
-            ok &= CheckFormat("network placeholder", TaskbarForm.BuildNetworkText(null), "↑ --.--  ↓ --.-- MB/s");
-            ok &= CheckFormat("rate zero", TaskbarForm.FormatRate(0.0), "00.00");
-            ok &= CheckFormat("rate fixed MB", TaskbarForm.FormatRate(1.8125 * 1024.0 * 1024.0), "01.81");
+            ok &= CheckFormat("network placeholder", TaskbarForm.BuildNetworkText(null), "↑ --.-- Mb  ↓ --.-- Mb");
+            ok &= CheckFormat("rate zero", TaskbarForm.FormatRate(0.0), "0.00");
+            ok &= CheckFormat("rate below one without padding", TaskbarForm.FormatRate(20000.0), "0.16");
+            ok &= CheckFormat("rate two digits retained", TaskbarForm.FormatRate(1520000.0), "12.16");
+            ok &= CheckFormat("rate decimal megabits", TaskbarForm.FormatRate(93.57 * 125000.0), "93.57");
             ok &= CheckFormat("rate invalid", TaskbarForm.FormatRate(double.NaN), "--.--");
             ok &= CheckFormat("percent without leading zero", TaskbarForm.FormatPercent(7.0), "7%");
             ok &= CheckFormat("percent one hundred", TaskbarForm.FormatPercent(100.0), "100%");

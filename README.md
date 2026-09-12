@@ -22,6 +22,8 @@ An open-source **Windows taskbar system monitor** for CPU usage, NVIDIA GPU util
 
 </div>
 
+> **源码与下载包的区别：** `main` 已包含紧凑布局、Codex 每分钟主动刷新，以及 `Mb` 网速单位 / 去掉前导零的更新。下方图片展示当前源码；Release 下载包仍为 v1.0.0，尚未包含这些更新。
+
 ## 少切一次窗口，多看一眼状态
 
 训练还在跑吗？显存快满了吗？下载有没有速度？Codex 额度还剩多少？
@@ -33,7 +35,7 @@ An open-source **Windows taskbar system monitor** for CPU usage, NVIDIA GPU util
 | **CPU / GPU / 内存** | 同时看占用、显存和温度；单卡布局还展示 CPU 核心频率。传感器不可用时明确显示缺失。 |
 | **Codex 剩余额度** | 直接显示套餐窗口的剩余百分比；悬停查看窗口、重置时间、更新时间与数据来源。 |
 | **单卡 / 双卡自动适配** | 按真实 NVIDIA 设备数量选择布局。单卡更紧凑，双卡上下独立显示。 |
-| **双向实时网速** | 上传、下载分开；默认每秒更新硬件和界面，数值变化不推挤列宽。 |
+| **双向实时网速** | 上传、下载分开；使用与测速网页一致的 Mb/秒，如 `0.16 Mb`、`12.16 Mb`，不补前导零；默认每秒更新，数值变化不推挤列宽。 |
 | **嵌入任务栏** | 使用任务栏子窗口，不是桌面级置顶悬浮窗；不额外占用 Alt+Tab 位置。 |
 | **可选手机提醒** | Codex 用量跨档提醒，支持 Server酱³ / Turbo；默认关闭，由你主动授权。 |
 
@@ -43,7 +45,7 @@ An open-source **Windows taskbar system monitor** for CPU usage, NVIDIA GPU util
 
 ![双 GPU 深色布局：左侧网速与 CPU，中间 GPU0 和 GPU1，右侧内存与 Codex](docs/screenshots/dual-dark.png)
 
-左侧是网速和 CPU；中间两行分别显示 GPU0 / GPU1 的**显存、占用、温度**；右侧固定显示内存和 AI 额度。默认参考宽度 **528**。
+左侧是网速和 CPU；中间两行分别显示 GPU0 / GPU1 的**显存、占用、温度**；右侧固定显示内存和 AI 额度。当前源码默认宽度 **520 个物理像素**，中间列两端保留分隔线留白。
 
 ### 单 GPU：更短，更紧凑
 
@@ -81,11 +83,10 @@ An open-source **Windows taskbar system monitor** for CPU usage, NVIDIA GPU util
 ```powershell
 git clone https://github.com/hanxiangmin/TaskbarTelemetry.git
 cd TaskbarTelemetry
-.\build.ps1
 .\run.ps1
 ```
 
-构建产物：`bin\Release\TaskbarTelemetry.exe`。保留同目录的配置、`lib` 与说明文件，不要只拷贝 EXE。首次构建会下载固定版本的硬件库，并校验 SHA-256。
+`run.ps1` 会在需要时构建，并使用唯一的固定运行入口：`最新版\TaskbarTelemetry.exe`。保留同目录的配置和 `lib`，不要只拷贝 EXE。首次构建会下载固定版本的硬件库，并校验 SHA-256。仅构建、不启动时可运行 `.\build.ps1 -OutputDirectory .\最新版`；直接运行不带参数的 `build.ps1` 仍会输出到开发目录 `bin\Release`。
 
 本地版双击时会自动请求管理员权限，**由你确认 Windows UAC**。程序不会静默安装驱动；CPU 温度 / 频率读取可能需要额外的官方硬件后端，见 [传感器说明](docs/GUIDE.md#cpu-温度仅非商店自编译版)。缺少传感器不影响其他指标。
 
@@ -106,7 +107,7 @@ cd TaskbarTelemetry
 
 多来源展示框架已具备 **5 秒原位轮换、悬停暂停、过期提示**。只有真正取得有效额度的来源才参与轮换；没有来源时显示“未连接”。旧数值最多保留 5 分钟，失效后显示 `--%`，不会猜成 `100%`。
 
-**注意：硬件每秒刷新不代表缓存额度是服务器实时值。** 额度窗口和来源可以在悬停提示中核对。当前通知只处理 Codex，不会自动向手机推送 Kimi 数据。
+**注意：硬件每秒刷新不代表缓存额度是服务器实时值。** 当前源码将 Codex 主动查询设为每 60 秒、本地额度事件扫描设为每 1 秒；自动定位已安装的原生 Codex CLI，避免管理员启动时缺少终端 PATH 而只能读旧日志。额度窗口、来源、查询失败原因和更新时间可以在悬停提示中核对。当前通知只处理 Codex，不会自动向手机推送 Kimi 数据。
 
 ## 按你的习惯调整
 
@@ -114,8 +115,8 @@ cd TaskbarTelemetry
 
 ```ini
 [ui]
-width=528
-scaleWidthWithDpi=true
+width=520
+scaleWidthWithDpi=false
 fontSize=8.5
 foreground=Auto
 background=Auto

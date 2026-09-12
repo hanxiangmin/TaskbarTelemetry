@@ -153,6 +153,7 @@ namespace TaskbarTelemetry
             lock (_stateLock)
             {
                 CodexMetric result = CloneMetric(_snapshot);
+                result.RefreshIntervalSeconds = GetRefreshSeconds();
                 DateTime now = DateTime.Now;
                 bool hadWindow = result.Primary != null || result.Secondary != null;
                 result.Primary = DiscardExpiredWindow(result.Primary, now);
@@ -239,13 +240,12 @@ namespace TaskbarTelemetry
                 _processStarting = true;
                 _nextStartAttemptUtc = nowUtc.AddSeconds(StartRetrySeconds);
                 SetStatusLocked("Starting Codex app-server");
-                command = NormalizeCommand(_settings.CodexCommand);
+                command = null;
             }
 
             try
             {
-                if (command.Length == 0)
-                    throw new InvalidOperationException("codex.command is empty");
+                command = CodexExecutableLocator.Resolve(_settings);
 
                 ProcessStartInfo startInfo = new ProcessStartInfo();
                 startInfo.FileName = command;
@@ -256,6 +256,8 @@ namespace TaskbarTelemetry
                 startInfo.RedirectStandardInput = true;
                 startInfo.RedirectStandardOutput = true;
                 startInfo.RedirectStandardError = true;
+                if (!string.IsNullOrWhiteSpace(_settings.CodexHome))
+                    startInfo.EnvironmentVariables["CODEX_HOME"] = _settings.ResolvePath(_settings.CodexHome);
 
                 process = new Process();
                 process.StartInfo = startInfo;
@@ -921,24 +923,12 @@ namespace TaskbarTelemetry
 
         private int GetRefreshSeconds()
         {
-            return Math.Max(1, _settings.CodexRefreshSeconds);
+            return Math.Max(60, _settings.CodexRefreshSeconds);
         }
 
         private TimeSpan GetRequestTimeout()
         {
-            int seconds = Math.Max(15, Math.Min(120, GetRefreshSeconds() * 2));
-            return TimeSpan.FromSeconds(seconds);
-        }
-
-        private static string NormalizeCommand(string command)
-        {
-            if (string.IsNullOrWhiteSpace(command))
-                return string.Empty;
-
-            string result = command.Trim();
-            if (result.Length >= 2 && result[0] == '"' && result[result.Length - 1] == '"')
-                result = result.Substring(1, result.Length - 2);
-            return result;
+            return TimeSpan.FromSeconds(20);
         }
 
         private static string GetProtocolError(Dictionary<string, object> message)

@@ -90,6 +90,8 @@ namespace TaskbarTelemetry
 
     internal sealed class CodexMetric
     {
+        // Zero means event-driven local data; positive means active poll cadence.
+        public int RefreshIntervalSeconds { get; set; }
         public QuotaWindowMetric Primary { get; set; }
         public QuotaWindowMetric Secondary { get; set; }
         public string PlanType { get; set; }

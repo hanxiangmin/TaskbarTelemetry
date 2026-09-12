@@ -18,34 +18,42 @@ namespace TaskbarTelemetry
         [STAThread]
         public static int Main(string[] args)
         {
-            if (args.Length != 2) return 2;
+            if (args.Length < 2 || args.Length > 4) return 2;
+            // Optional physical-DPI strips support local spacing reviews. They
+            // still only draw demonstration values, never run the diagnostic probe.
+            float dpi = args.Length >= 3 ? float.Parse(args[2], System.Globalization.CultureInfo.InvariantCulture) : 192;
+            bool stress = args.Length == 4 && args[3] == "--stress";
             string output = Path.GetFullPath(args[0]);
             Directory.CreateDirectory(output);
             AppSettings settings = AppSettings.Load(args[1]);
-            using (Bitmap dual = Strip(settings, true, false))
-            using (Bitmap single = Strip(settings, false, false))
-            using (Bitmap dualLight = Strip(settings, true, true))
-            using (Bitmap singleLight = Strip(settings, false, true))
+            using (Bitmap dual = Strip(settings, true, false, dpi, stress))
+            using (Bitmap single = Strip(settings, false, false, dpi, stress))
+            using (Bitmap dualLight = Strip(settings, true, true, dpi, stress))
+            using (Bitmap singleLight = Strip(settings, false, true, dpi, stress))
             {
                 dual.Save(Path.Combine(output, "dual-dark.png"), ImageFormat.Png);
                 single.Save(Path.Combine(output, "single-dark.png"), ImageFormat.Png);
                 dualLight.Save(Path.Combine(output, "dual-light.png"), ImageFormat.Png);
                 singleLight.Save(Path.Combine(output, "single-light.png"), ImageFormat.Png);
-                using (Bitmap hero = Hero(dual, single)) hero.Save(Path.Combine(output, "hero.png"), ImageFormat.Png);
-                using (Bitmap overview = Overview(dual, single)) overview.Save(Path.Combine(output, "layout-overview.png"), ImageFormat.Png);
+                if (args.Length == 2)
+                {
+                    using (Bitmap hero = Hero(dual, single)) hero.Save(Path.Combine(output, "hero.png"), ImageFormat.Png);
+                    using (Bitmap overview = Overview(dual, single)) overview.Save(Path.Combine(output, "layout-overview.png"), ImageFormat.Png);
+                }
             }
-            Console.WriteLine("Generated 6 documentation PNGs with production TaskbarRenderer and synthetic values. No runtime tests performed.");
+            Console.WriteLine("Generated {0} documentation PNGs with production TaskbarRenderer and synthetic values. No runtime tests performed.", args.Length == 2 ? 6 : 4);
             return 0;
         }
 
-        private static Bitmap Strip(AppSettings settings, bool dual, bool light)
+        private static Bitmap Strip(AppSettings settings, bool dual, bool light, float dpi, bool stress)
         {
-            Bitmap bitmap = new Bitmap(dual ? 1056 : 952, 88, PixelFormat.Format32bppArgb);
-            bitmap.SetResolution(192, 192);
+            int width = (int)Math.Round(TaskbarRenderer.WindowWidth(settings.TaskbarWidth, dual) * (settings.ScaleWidthWithDpi ? dpi / 96 : 1));
+            Bitmap bitmap = new Bitmap(width, (int)Math.Round(40 * dpi / 96), PixelFormat.Format32bppArgb);
+            bitmap.SetResolution(dpi, dpi);
             TelemetrySnapshot snapshot = new TelemetrySnapshot();
             snapshot.CapturedAtLocal = new DateTime(2026, 1, 1, 12, 0, 0);
-            snapshot.System.UploadBytesPerSecond = .28 * 1024 * 1024;
-            snapshot.System.DownloadBytesPerSecond = 3.42 * 1024 * 1024;
+            snapshot.System.UploadBytesPerSecond = .16 * 125000;
+            snapshot.System.DownloadBytesPerSecond = 12.16 * 125000;
             snapshot.System.CpuUsagePercent = 24;
             snapshot.System.MemoryUsagePercent = 46;
             snapshot.CpuTemperature.Celsius = 52;
@@ -57,6 +65,21 @@ namespace TaskbarTelemetry
             snapshot.Codex.Primary = new QuotaWindowMetric { UsedPercent = 12, WindowDurationMinutes = 300,
                 ResetsAtLocal = snapshot.CapturedAtLocal.AddHours(5) };
             snapshot.Codex.UpdatedAtLocal = snapshot.CapturedAtLocal;
+            if (stress)
+            {
+                snapshot.System.UploadBytesPerSecond = 999.9 * 125000;
+                snapshot.System.DownloadBytesPerSecond = 999.9 * 125000;
+                snapshot.System.CpuUsagePercent = 100;
+                snapshot.System.MemoryUsagePercent = 100;
+                snapshot.CpuTemperature.Celsius = 100;
+                snapshot.Codex.Primary.UsedPercent = 0;
+                foreach (GpuMetric gpu in snapshot.Gpus)
+                {
+                    gpu.MemoryUsedBytes = 999UL * 1024 * 1024 * 1024;
+                    gpu.UsagePercent = 100;
+                    gpu.TemperatureCelsius = 100;
+                }
+            }
             ProviderQuotaMetric quota = ProviderQuotaMetric.FromCodex(snapshot.Codex);
             using (Graphics g = Graphics.FromImage(bitmap))
             using (Font font = new Font(settings.FontFamily, settings.FontSizePoints, FontStyle.Regular, GraphicsUnit.Point))
@@ -85,11 +108,11 @@ namespace TaskbarTelemetry
                 Label(g, "CPU  /  GPU  /  RAM  /  NETWORK  /  CODEX", 76, 259, 23, Muted, false);
                 Card(g, new Rectangle(72, 336, 1456, 222), "02  /  DUAL GPU", "两张显卡，各看各的。", dual, Cyan);
                 Card(g, new Rectangle(72, 582, 1456, 222), "01  /  SINGLE GPU", "自动收窄，依然一眼看全。", single, Violet);
-                Label(g, "1 秒刷新", 76, 846, 25, Ink, true);
+                Label(g, "硬件 1 秒刷新", 76, 846, 25, Ink, true);
                 Label(g, "自动识别单 / 双卡", 330, 846, 25, Ink, true);
                 Label(g, "任务栏子窗口", 718, 846, 25, Ink, true);
                 Label(g, "MIT 开源", 1110, 846, 25, Ink, true);
-                Label(g, "WINDOWS x64 / v1.0.0   ·   生产界面绘制 / 演示数值   ·   Kimi 接入待验证", 76, 908, 18, Muted, false);
+                Label(g, "WINDOWS x64 / MAIN 源码预览   ·   生产界面绘制 / 演示数值   ·   Kimi 接入待验证", 76, 908, 18, Muted, false);
             }
             return bitmap;
         }
@@ -100,7 +123,7 @@ namespace TaskbarTelemetry
             using (Graphics g = Graphics.FromImage(bitmap))
             {
                 Setup(g, bitmap.Size);
-                Label(g, "双 GPU / 528", 48, 23, 22, Cyan, true);
+                Label(g, "双 GPU / 520", 48, 23, 22, Cyan, true);
                 Place(g, dual, 72, 68);
                 Label(g, "单 GPU / 476", 48, 191, 22, Violet, true);
                 Place(g, single, 176, 236);

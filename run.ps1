@@ -3,7 +3,10 @@ param()
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-$executable = Join-Path $projectRoot 'bin\Release\TaskbarTelemetry.exe'
+# Stable local runtime folder (Unicode escapes also work in Windows PowerShell 5).
+$runtimeFolder = -join ([char[]](0x6700, 0x65B0, 0x7248))
+$runtimeDirectory = Join-Path $projectRoot $runtimeFolder
+$executable = Join-Path $runtimeDirectory 'TaskbarTelemetry.exe'
 $needsBuild = -not (Test-Path -LiteralPath $executable)
 if (-not $needsBuild) {
     $executableWriteTime = (Get-Item -LiteralPath $executable).LastWriteTimeUtc
@@ -24,6 +27,6 @@ if ($needsBuild) {
     if (Get-Process -Name 'TaskbarTelemetry' -ErrorAction SilentlyContinue) {
         throw '检测到正在运行的旧版 TaskbarTelemetry。请先右键任务栏监控区域并选择“退出”，再重新运行本脚本。'
     }
-    & (Join-Path $projectRoot 'build.ps1')
+    & (Join-Path $projectRoot 'build.ps1') -OutputDirectory $runtimeDirectory
 }
 Start-Process -FilePath $executable -WorkingDirectory (Split-Path -Parent $executable)

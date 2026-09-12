@@ -4,6 +4,8 @@ packages/
 lib/
 test-artifacts/
 artifacts/
+最新版/
+启动 TaskbarTelemetry.lnk
 store/store-identity.json
 *.user
 *.suo
