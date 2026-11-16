@@ -59,7 +59,7 @@ namespace TaskbarTelemetry
             float unitWidth = dual ? memoryUnitWidth : Math.Max(Measure(g, font, "GHz"), memoryUnitWidth + 2);
             float unitGap = dual ? 0 : layoutScale;
             float memoryWidth = numberWidth + unitGap + unitWidth;
-            float cpuWidth = Measure(g, cpuFont, "WW-WWWWWWW");
+            float cpuWidth = Measure(g, cpuFont, "WW-WWWWWWW", 0);
             float hardwareLabelWidth = dual ? Math.Max(Measure(g, font, settings.Gpu0Alias, 0), Measure(g, font, settings.Gpu1Alias, 0))
                 : Math.Max(Measure(g, font, "CPU"), Measure(g, font, "GPU"));
             float leftInset = (dual ? 4 : 6) * layoutScale;
@@ -116,17 +116,6 @@ namespace TaskbarTelemetry
                 Add(slots, prefix + ".percent", usage, percentX, y, percentWidth, rowHeight, false, StringAlignment.Far);
                 Add(slots, prefix + ".temperature", temperature, tempX, y, tempWidth, rowHeight, false, StringAlignment.Far);
             }
-            if (dual)
-            {
-                const string ThinSpace = "\u2009";
-                float cpuInset = 3 * layoutScale;
-                float cpuMetricsWidth = Math.Min(edges[1] - 2 * cpuInset - cpuWidth,
-                    Measure(g, font, settings.CpuTemperatureEnabled ? "100%" + ThinSpace + "888°C" : "100%", 0));
-                float cpuMetricsX = edges[1] - cpuInset - cpuMetricsWidth;
-                Add(slots, "cpu.label", cpu, cpuInset, rowHeight, cpuWidth, rowHeight, true, StringAlignment.Near);
-                string cpuMetrics = settings.CpuTemperatureEnabled ? cpuPercent + ThinSpace + cpuTemp : cpuPercent;
-                Add(slots, "cpu.metrics", cpuMetrics, cpuMetricsX, rowHeight, cpuMetricsWidth, rowHeight, false, StringAlignment.Far);
-            }
             double? up = snapshot == null || snapshot.System == null ? (double?)null : snapshot.System.UploadBytesPerSecond;
             double? down = snapshot == null || snapshot.System == null ? (double?)null : snapshot.System.DownloadBytesPerSecond;
             bool rateInBytes = settings.NetworkRateInBytes;
@@ -134,7 +123,21 @@ namespace TaskbarTelemetry
             {
                 float half = (edges[1] - 2 * gap) / 2;
                 AddNetwork(slots, g, font, "network.upload", "↑", up, rateInBytes, gap, 0, half, rowHeight, gap);
-                AddNetwork(slots, g, font, "network.download", "↓", down, rateInBytes, gap + half, 0, half, rowHeight, gap);
+                float cpuInset = 3 * layoutScale;
+                float downloadRight = edges[1] - cpuInset;
+                AddNetwork(slots, g, font, "network.download", "↓", down, rateInBytes,
+                    gap + half, 0, half, rowHeight, gap, downloadRight);
+                float cpuMetricsX = cpuInset + cpuWidth;
+                float cpuMetricsWidth = Math.Max(1, downloadRight - cpuMetricsX);
+                string cpuMetrics = cpuPercent;
+                if (settings.CpuTemperatureEnabled)
+                {
+                    cpuMetrics = cpuPercent + "\u2002" + cpuTemp;
+                    if (Measure(g, font, cpuMetrics, 0) > cpuMetricsWidth)
+                        cpuMetrics = cpuPercent + "\u2009" + cpuTemp;
+                }
+                Add(slots, "cpu.label", cpu, cpuInset, rowHeight, cpuWidth, rowHeight, true, StringAlignment.Near);
+                Add(slots, "cpu.metrics", cpuMetrics, cpuMetricsX, rowHeight, cpuMetricsWidth, rowHeight, false, StringAlignment.Far);
             }
             else
             {
@@ -195,7 +198,8 @@ namespace TaskbarTelemetry
             { format.FormatFlags |= StringFormatFlags.MeasureTrailingSpaces; return (float)Math.Ceiling(g.MeasureString(text, font, 1000, format).Width) + padding; }
         }
         private static void AddNetwork(List<RenderSlot> slots, Graphics g, Font font, string id,
-            string arrow, double? bytes, bool rateInBytes, float x, float y, float width, float height, float gap)
+            string arrow, double? bytes, bool rateInBytes, float x, float y, float width, float height, float gap,
+            float? rightEdge = null)
         {
             const string arrowGap = "\u2009";
             float numberWidth = Math.Max(Measure(g, font, arrow + arrowGap + "888.8"),
@@ -205,13 +209,15 @@ namespace TaskbarTelemetry
                 Math.Max(Measure(g, font, "G" + suffix), Measure(g, font, "T" + suffix)));
             // Keep the arrow with the number and reserve a pixel on each end of the cell.
             gap = Math.Max(0, Math.Min(gap / 2, width - numberWidth - unitWidth - 2));
-            float start = x + (width - numberWidth - unitWidth - gap) / 2;
+            float contentWidth = numberWidth + unitWidth + gap;
+            float start = rightEdge.HasValue ? rightEdge.Value - contentWidth : x + (width - contentWidth) / 2;
             string rate = Rate(bytes, rateInBytes);
             int separator = rate.LastIndexOf(' ');
             Add(slots, id + ".value", arrow + arrowGap + rate.Substring(0, separator),
                 start, y, numberWidth, height, false, StringAlignment.Far);
-            Add(slots, id + ".unit", rate.Substring(separator + 1), start + numberWidth + gap,
-                y, unitWidth, height, false, StringAlignment.Near);
+            float unitX = start + numberWidth + gap;
+            Add(slots, id + ".unit", rate.Substring(separator + 1), unitX,
+                y, unitWidth, height, false, rightEdge.HasValue ? StringAlignment.Far : StringAlignment.Near);
         }
         private static void Add(List<RenderSlot> slots, string id, string text, float x, float y, float w, float h, bool cpu, StringAlignment alignment)
         {

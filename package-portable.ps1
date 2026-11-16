@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version = '1.0.2',
+    [ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version = '1.0.3',
     [switch]$AcknowledgeIncompleteDesktopValidation
 )
 $ErrorActionPreference = 'Stop'

@@ -16,13 +16,13 @@ An open-source **Windows taskbar system monitor** for CPU usage, NVIDIA GPU util
 [![MIT](https://img.shields.io/badge/License-MIT-22C55E?style=flat-square)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/hanxiangmin/TaskbarTelemetry?style=flat-square)](https://github.com/hanxiangmin/TaskbarTelemetry/releases/latest)
 
-### [⬇ 下载 v1.0.2 Windows x64 便携版 · 解压即用](https://github.com/hanxiangmin/TaskbarTelemetry/releases/download/v1.0.2/TaskbarTelemetry-v1.0.2-windows-x64.zip)
+### [⬇ 下载 v1.0.3 Windows x64 便携版 · 解压即用](https://github.com/hanxiangmin/TaskbarTelemetry/releases/download/v1.0.3/TaskbarTelemetry-v1.0.3-windows-x64.zip)
 
 [快速开始](#快速开始) · [界面预览](#两种布局自动适配) · [配置手册](docs/GUIDE.md) · [参与开发](CONTRIBUTING.md) · [反馈问题](https://github.com/hanxiangmin/TaskbarTelemetry/issues)
 
 </div>
 
-> **v1.0.2** 对齐双卡显存单位与温度，CPU / GPU 温度显示为 °C。网速可在 INI 中切换为 MB/s。[查看更新说明](docs/releases/v1.0.2.md)。
+> **v1.0.3** 拉开双卡布局中的 CPU 占用率与温度间距，CPU 温度右端与上方下载单位对齐。[查看更新说明](docs/releases/v1.0.3.md)。
 
 ## 少切一次窗口，多看一眼状态
 
@@ -68,7 +68,7 @@ An open-source **Windows taskbar system monitor** for CPU usage, NVIDIA GPU util
 
 ### 下载后直接运行
 
-1. 下载 [**TaskbarTelemetry-v1.0.2-windows-x64.zip**](https://github.com/hanxiangmin/TaskbarTelemetry/releases/download/v1.0.2/TaskbarTelemetry-v1.0.2-windows-x64.zip)。
+1. 下载 [**TaskbarTelemetry-v1.0.3-windows-x64.zip**](https://github.com/hanxiangmin/TaskbarTelemetry/releases/download/v1.0.3/TaskbarTelemetry-v1.0.3-windows-x64.zip)。
 2. 右键 ZIP → **全部解压**，保留整个 `TaskbarTelemetry` 文件夹。
 3. 双击 **TaskbarTelemetry.exe**，由你确认 Windows 管理员提示。小工具会出现在任务栏系统托盘左侧，自动识别单卡 / 双卡。
 

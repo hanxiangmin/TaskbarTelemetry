@@ -175,6 +175,10 @@ foreach ($gpuCount in @(0, 1, 2)) {
                     $unit1 = $byId['gpu1.memory.unit']
                     $temp0 = $byId['gpu0.temperature']
                     $temp1 = $byId['gpu1.temperature']
+                    $cpuMetrics = $byId['cpu.metrics']
+                    $downloadUnit = $byId['network.download.unit']
+                    Assert-Display ((Slot-Field $cpuMetrics 'Bounds').Right -eq (Slot-Field $downloadUnit 'Bounds').Right -and
+                        (Slot-Field $cpuMetrics 'Alignment') -eq 'Far' -and (Slot-Field $downloadUnit 'Alignment') -eq 'Far') 'CPU temperature and download unit are misaligned'
                     Assert-Display ((Slot-Field $unit0 'Text') -ceq 'GB' -and (Slot-Field $unit1 'Text') -ceq 'GB' -and
                         (Slot-Field $unit0 'Bounds').X -eq (Slot-Field $unit1 'Bounds').X) 'Dual GPU memory units are misaligned'
                     $celsius = [string][char]0x00B0 + 'C'

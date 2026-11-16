@@ -263,7 +263,11 @@ namespace TaskbarTelemetry
                         }
                         if (gpuCount >= 2)
                         {
-                            Check("CPU keeps 100% and shows Celsius", Slot(b, "cpu.metrics").Text == "100%\u2009100°C");
+                            RenderSlot cpuMetrics = Slot(b, "cpu.metrics");
+                            Check("CPU keeps 100% and shows Celsius", cpuMetrics.Text.StartsWith("100%", StringComparison.Ordinal) &&
+                                cpuMetrics.Text.EndsWith("100°C", StringComparison.Ordinal));
+                            Check("CPU temperature and download unit align", cpuMetrics.Alignment == StringAlignment.Far &&
+                                cpuMetrics.Bounds.Right == Slot(b, "network.download.unit").Bounds.Right);
                             Check("dual GPU memory units align", Slot(b, "gpu0.memory.unit").Bounds.Left ==
                                 Slot(b, "gpu1.memory.unit").Bounds.Left);
                             Check("dual GPU Celsius units align", Slot(b, "gpu0.temperature").Bounds.Right ==

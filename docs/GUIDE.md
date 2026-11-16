@@ -19,6 +19,7 @@
 - 单卡频率来自现有 LibreHardwareMonitor 0.9.6 的核心 Clock 传感器，显示库报告的各核心最高值；不是平均有效频率，也不保证与任务管理器口径一致。排除总线、平均与 Effective 时钟；不会自行用 WMI 标称频率补值。缺少硬件库 / 可用核心传感器 / 权限，或 Store 构建时显示 `-- GHz`，详情在悬停中。上游传感器有自己的硬件回退策略，不能将此显示声明为独立验证过的实时有效频率。
 - NVIDIA 数量依据 NVML 返回的真实 UUID / PCI 身份，核显、虚拟显示器和采集失败占位不计入。温度缺失不改变布局；枚举暂时失败时保留已知身份并清空读数。超过两块只显示排序后的前两块。
 - 双卡显存的 GB 单位上下对齐，两行温度按 °C 右对齐。GPU 占用率在任务栏最多显示 99%，悬停提示保留实际值。CPU / GPU 的占用率和温度在单卡模式上下对齐。
+- 双卡布局中的 CPU 占用率与温度之间留有间距，温度右端与上方下载单位对齐。两项读数较长时会缩小间距。
 - 网速箭头紧贴数值，数值与单位在固定宽度内对齐。默认显示 Mb / Gb / Tb（比特/秒），与测速网页使用相同的十进制单位。设置 `network.rateUnit=bytes` 后显示 MB / GB / TB（字节/秒）。两种模式都按 1000 进位。网速是所选网卡每秒采样的实时流量。显存 GB 仍是 GiB 的紧凑标记，悬停提供精确值。
 - 网速数字不补前导零，例如 `0.16 Mb`、`1.16 Mb`、`12.16 Mb`。数值保持右对齐，箭头紧贴数字，单位和分隔线位置不随位数变化。
 - CPU 与内存占用使用 Windows 接口；NVIDIA 显存、占用及温度通过驱动 NVML 读取。CPU 温度使用可选 LibreHardwareMonitor 后端。
@@ -195,7 +196,7 @@ SendKey 不会写入 INI 或日志；应用使用 Windows 当前用户数据保�
 
 运行 `./package-release.ps1`：先构建和测试，再用明确的文件清单生成源码 ZIP、运行包 ZIP 和 SHA-256 清单。只打包默认配置、源码、构建脚本、许可、兼容性文档及演示截图；不包含本机运行状态、密钥、用户路径、Git 历史或开发产物。
 
-兼容边界与尚未完成的真实环境验收见 [兼容性说明](COMPATIBILITY.md) 和 [验收记录](VALIDATION.md)。便携发布包由 `package-portable.ps1 -Version 1.0.2 -AcknowledgeIncompleteDesktopValidation` 从干净 Git 提交构建，并验证依赖哈希、默认配置和 ZIP 完整性。独立网速与排版检查在 CI 中执行，结果以相应提交的 Actions 记录为准。
+兼容边界与尚未完成的真实环境验收见 [兼容性说明](COMPATIBILITY.md) 和 [验收记录](VALIDATION.md)。便携发布包由 `package-portable.ps1 -Version 1.0.3 -AcknowledgeIncompleteDesktopValidation` 从干净 Git 提交构建，并验证依赖哈希、默认配置和 ZIP 完整性。独立网速与排版检查在 CI 中执行，结果以相应提交的 Actions 记录为准。
 
 ## 许可证
 
