@@ -233,7 +233,7 @@ namespace TaskbarTelemetry
                         Check("text fits " + gpuCount + " GPU / DPI " + dpi, Fits(g, b, font, cpuFont, size));
                         float[] edges = TaskbarRenderer.ColumnEdges(size.Width, gpuCount >= 2);
                         Check("column contract", Math.Abs(edges[1] / scale - (gpuCount >= 2 ? 200 : 140)) < 0.01 &&
-                            Math.Abs(edges[2] / scale - (gpuCount >= 2 ? 408 : 356)) < 0.01 &&
+                            Math.Abs(edges[2] / scale - (gpuCount >= 2 ? 402 : 356)) < 0.01 &&
                             Math.Abs(edges[3] / scale - (gpuCount >= 2 ? 520 : 476)) < 0.01);
                         foreach (RenderSlot slot in b)
                         {
@@ -241,8 +241,8 @@ namespace TaskbarTelemetry
                                 (gpuCount < 2 && slot.Id.StartsWith("cpu", StringComparison.Ordinal));
                             if (hardware)
                                 Check("hardware separator clearance " + slot.Id,
-                                    slot.Bounds.Left >= edges[1] + 8 * scale - 0.1F &&
-                                    slot.Bounds.Right <= edges[2] - 7 * scale + 0.1F);
+                                    slot.Bounds.Left >= edges[1] + (gpuCount >= 2 ? 4 : 6) * scale - 0.1F &&
+                                    slot.Bounds.Right <= edges[2] - (gpuCount >= 2 ? 7 : 5) * scale + 0.1F);
                         }
                         Check("CPU label matches layout", gpuCount >= 2 ?
                             Slot(b, "cpu.label").Text.TrimEnd() == "R9-9950X3D" && Slot(b, "cpu.label").CpuFont :
@@ -263,11 +263,13 @@ namespace TaskbarTelemetry
                         }
                         if (gpuCount >= 2)
                         {
-                            Check("dual usable hardware width preserved", Math.Abs((edges[2] - edges[1]) / scale - 15 - 193) < 0.01);
-                            Check("CPU percent-temperature gap tightened", Math.Abs((Slot(b, "cpu.temperature").Bounds.Left -
-                                Slot(b, "cpu.percent").Bounds.Right) / scale - 4) < 0.01);
-                            Check("GPU label separator gutter", Slot(b, "gpu0.label").Bounds.X - edges[1] >= 8 * scale - 0.1F &&
-                                Slot(b, "gpu0.label").Bounds.X == Slot(b, "gpu1.label").Bounds.X);
+                            Check("CPU keeps 100% and shows Celsius", Slot(b, "cpu.metrics").Text == "100%\u2009100°C");
+                            Check("dual GPU memory units align", Slot(b, "gpu0.memory.unit").Bounds.Left ==
+                                Slot(b, "gpu1.memory.unit").Bounds.Left);
+                            Check("dual GPU Celsius units align", Slot(b, "gpu0.temperature").Bounds.Right ==
+                                Slot(b, "gpu1.temperature").Bounds.Right && Slot(b, "gpu0.temperature").Alignment == StringAlignment.Far);
+                            Check("GPU display caps at 99%", Slot(b, "gpu0.percent").Text == "99%" &&
+                                TaskbarForm.BuildGpuText(large, 0, settings.Gpu0Alias).Contains("100%"));
                             Check("dual GPU labels unchanged", Slot(b, "gpu0.label").Text == settings.Gpu0Alias && Slot(b, "gpu1.label").Text == settings.Gpu1Alias);
                         }
                         if (gpuCount == 1)
@@ -321,7 +323,7 @@ namespace TaskbarTelemetry
                     }
                 }
                 page.DrawString("生产绘制代码 · 演示数据；Kimi 仅为轮换示例，尚未通过真实账户核对。", caption, Brushes.DimGray, 26, 346);
-                page.DrawString("双卡 520（200/208/112） · 单卡 476（140/216/120）；Mb = Mbps。", caption, Brushes.DimGray, 26, 371);
+                page.DrawString("双卡 520（200/202/118） · 单卡 476（140/216/120）；Mb = Mbps。", caption, Brushes.DimGray, 26, 371);
                 canvas.Save(Path.Combine(directory, "layout-overview.png"));
             }
         }
@@ -361,7 +363,7 @@ namespace TaskbarTelemetry
                     if (label.HasValue) Check("quota names/numbers remain in place", labelSlot.Bounds == label.Value && percentSlot.Bounds == percent.Value);
                     label = labelSlot.Bounds; percent = percentSlot.Bounds;
                     if (choice == null) Check("disconnected visible text", labelSlot.Text == "未连接" && percentSlot.Text == "");
-                    if (choice != null && choice.State == QuotaConnectionState.Expired) Check("expired visible text", percentSlot.Text == "--%");
+                    if (choice != null && choice.State == QuotaConnectionState.Expired) Check("expired visible text", percentSlot.Text == "--%·");
                 }
             }
             foreach (int gpuCount in new int[] { 0, 1, 2 })

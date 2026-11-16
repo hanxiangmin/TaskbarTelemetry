@@ -450,7 +450,7 @@ namespace TaskbarTelemetry
         internal static string BuildCpuText(TelemetrySnapshot snapshot, string alias)
         {
             string temperature = snapshot != null && snapshot.CpuTemperature != null && snapshot.CpuTemperature.Celsius.HasValue
-                ? FormatTemperature(snapshot.CpuTemperature.Celsius.Value) : "--°";
+                ? FormatTemperature(snapshot.CpuTemperature.Celsius.Value) : "--°C";
             return CpuModelDetector.ValidateAlias(alias) + " " +
                 (snapshot == null || snapshot.System == null ? "--%" : FormatPercent(snapshot.System.CpuUsagePercent)) + " " + temperature;
         }
@@ -461,7 +461,7 @@ namespace TaskbarTelemetry
             GpuMetric gpu = displayIndex >= 0 && displayIndex < devices.Count ? devices[displayIndex] : null;
             return alias + " " + FormatGpuMemory(gpu == null ? null : gpu.MemoryUsedBytes) + " " +
                 (gpu == null || !gpu.UsagePercent.HasValue ? "--%" : FormatPercent(gpu.UsagePercent.Value)) + " " +
-                (gpu == null || !gpu.TemperatureCelsius.HasValue ? "--°" : FormatTemperature(gpu.TemperatureCelsius.Value));
+                (gpu == null || !gpu.TemperatureCelsius.HasValue ? "--°C" : FormatTemperature(gpu.TemperatureCelsius.Value));
         }
 
         internal static string BuildCodexText(TelemetrySnapshot snapshot)
@@ -489,8 +489,8 @@ namespace TaskbarTelemetry
         internal static string FormatTemperature(double value)
         {
             if (double.IsNaN(value) || double.IsInfinity(value))
-                return "--°";
-            return FormatInteger(value) + "°";
+                return "--°C";
+            return FormatInteger(value) + "°C";
         }
 
         internal static string FormatGpuMemory(ulong? bytes)
@@ -552,7 +552,9 @@ namespace TaskbarTelemetry
                 builder.Append("  " + snapshot.CpuFrequency.SensorName);
                 AppendStatus(builder, snapshot.CpuFrequency.Status);
             }
-            builder.Append("\r\n网速单位: Mb / Gb / Tb = Mbps / Gbps / Tbps（比特/秒，与测速网页一致；1000 进位）");
+            builder.Append(settings.NetworkRateInBytes
+                ? "\r\n网速单位: MB / GB / TB = MB/s / GB/s / TB/s（字节/秒，1000 进位）"
+                : "\r\n网速单位: Mb / Gb / Tb = Mbps / Gbps / Tbps（比特/秒，与测速网页一致；1000 进位）");
             builder.Append("\r\n额度右侧 · 表示数据过期；悬停期间暂停轮换");
             int gpuCount = GpuTopology.Devices(snapshot.Gpus).Count;
             builder.Append("\r\nNVIDIA 设备: " + gpuCount.ToString(CultureInfo.InvariantCulture));
@@ -603,6 +605,11 @@ namespace TaskbarTelemetry
                         builder.Append(FormatBytes(gpu.MemoryUsedBytes.Value));
                         builder.Append(" / ");
                         builder.Append(FormatBytes(gpu.MemoryTotalBytes.Value));
+                    }
+                    if (gpu.UsagePercent.HasValue)
+                    {
+                        builder.Append(" / 占用 ");
+                        builder.Append(FormatPercent(gpu.UsagePercent.Value));
                     }
                     AppendStatus(builder, gpu.Status);
                 }

@@ -1,4 +1,4 @@
-TaskbarTelemetry v1.0.1 — Windows 任务栏资源监控
+TaskbarTelemetry v1.0.2 — Windows 任务栏资源监控
 
 使用方法
 1. 右键下载的 ZIP →“全部解压”，不要在压缩包里直接打开 EXE。

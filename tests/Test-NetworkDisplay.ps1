@@ -51,15 +51,23 @@ $cases = @(
     @{ Bytes = -1.0; Text = '--.-- Mb' },
     @{ Bytes = [double]::NaN; Text = '--.-- Mb' },
     @{ Bytes = [double]::PositiveInfinity; Text = '--.-- Mb' },
-    @{ Bytes = [double]::NegativeInfinity; Text = '--.-- Mb' }
+    @{ Bytes = [double]::NegativeInfinity; Text = '--.-- Mb' },
+    @{ Bytes = 0.0; Text = '0.00 MB'; InBytes = $true },
+    @{ Bytes = 12326250.0; Text = '12.33 MB'; InBytes = $true },
+    @{ Bytes = 999940000.0; Text = '999.9 MB'; InBytes = $true },
+    @{ Bytes = 999950000.0; Text = '1.00 GB'; InBytes = $true },
+    @{ Bytes = 1000000000000.0; Text = '1.00 TB'; InBytes = $true },
+    @{ Bytes = [double]::MaxValue; Text = '>999 TB'; InBytes = $true },
+    @{ Bytes = $null; Text = '--.-- MB'; InBytes = $true }
 )
 foreach ($case in $cases) {
-    $actual = $rate.Invoke($null, [object[]]@($case.Bytes))
+    $actual = $rate.Invoke($null, [object[]]@($case.Bytes, [bool]$case.InBytes))
     Assert-Display ($actual -ceq $case.Text) "Rate mismatch: expected $($case.Text), got $actual"
 }
 
 $settings = New-Metric 'AppSettings'
 $settings.GetType().GetProperty('CpuAlias').SetValue($settings, 'i9-10980XE', $null)
+$rateInBytes = $settings.GetType().GetProperty('NetworkRateInBytes')
 New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
 $profiles = @(
     @{ Dpi = 96; Scale = 1.0 }, @{ Dpi = 120; Scale = 1.25 },
@@ -72,6 +80,11 @@ foreach ($gpuCount in @(0, 1, 2)) {
     $snapshot.System.MemoryUsagePercent = 100
     $snapshot.CpuTemperature.Celsius = 100
     $snapshot.CpuFrequency.Megahertz = 3900
+    $snapshot.Codex.Primary = New-Metric 'QuotaWindowMetric'
+    $snapshot.Codex.Primary.UsedPercent = 0
+    $quotaType = $assembly.GetType('TaskbarTelemetry.ProviderQuotaMetric', $true)
+    $quota = $quotaType.GetMethod('FromCodex').Invoke($null, [object[]]@($snapshot.Codex.PSObject.BaseObject))
+    $quota.State = 'Stale'
     for ($i = 0; $i -lt $gpuCount; $i++) {
         $gpu = New-Metric 'GpuMetric'
         $gpu.IsNvidiaDevice = $true
@@ -95,13 +108,15 @@ foreach ($gpuCount in @(0, 1, 2)) {
         try {
             $originalBounds = @{}
             foreach ($case in $cases) {
+                $rateInBytes.SetValue($settings, [bool]$case.InBytes, $null)
                 $snapshot.System.UploadBytesPerSecond = if ($null -eq $case.Bytes) { [double]::NaN } else { $case.Bytes }
                 $snapshot.System.DownloadBytesPerSecond = $snapshot.System.UploadBytesPerSecond
                 $slots = $buildSlots.Invoke($null, [object[]]@($graphics.PSObject.BaseObject, $bitmap.Size,
                     $font.PSObject.BaseObject, $cpuFont.PSObject.BaseObject,
-                    $settings.PSObject.BaseObject, $snapshot.PSObject.BaseObject, $null))
+                    $settings.PSObject.BaseObject, $snapshot.PSObject.BaseObject, $quota))
                 foreach ($slot in $slots) {
                     $id = Slot-Field $slot 'Id'
+                    $boundsKey = "$([bool]$case.InBytes)/$id"
                     $bounds = Slot-Field $slot 'Bounds'
                     $text = Slot-Field $slot 'Text'
                     $slotFont = if (Slot-Field $slot 'CpuFont') { $cpuFont } else { $font }
@@ -109,9 +124,9 @@ foreach ($gpuCount in @(0, 1, 2)) {
                     $context = "$gpuCount GPU / $($profile.Dpi) DPI / scale $($profile.Scale) / $id / $text"
                     Assert-Display ($measured.Width -le $bounds.Width + 0.2 -and $measured.Height -le $bounds.Height + 0.2) "Clipped: $context"
                     Assert-Display ($bounds.Left -ge 0 -and $bounds.Right -le $bitmap.Width + 0.2) "Outside window: $context"
-                    if ($originalBounds.ContainsKey($id)) {
-                        Assert-Display ($bounds -eq $originalBounds[$id]) "Moving slot: $context"
-                    } else { $originalBounds[$id] = $bounds }
+                    if ($originalBounds.ContainsKey($boundsKey)) {
+                        Assert-Display ($bounds -eq $originalBounds[$boundsKey]) "Moving slot: $context"
+                    } else { $originalBounds[$boundsKey] = $bounds }
                     if ($id -like 'network.*.unit') {
                         Assert-Display ($text -ceq $case.Text.Split(' ')[1]) "Wrong unit: $context"
                         if ($gpuCount -ge 2) {
@@ -130,6 +145,7 @@ foreach ($gpuCount in @(0, 1, 2)) {
                 }
             }
             if ($profile.Dpi -eq 144 -and $profile.Scale -eq 1 -and $gpuCount -gt 0) {
+                $rateInBytes.SetValue($settings, $false, $null)
                 $snapshot.System.UploadBytesPerSecond = 20000
                 $snapshot.System.DownloadBytesPerSecond = 1520000
                 foreach ($theme in @('dark', 'light')) {
@@ -140,6 +156,39 @@ foreach ($gpuCount in @(0, 1, 2)) {
                         $font.PSObject.BaseObject, $foreground,
                         $settings.PSObject.BaseObject, $snapshot.PSObject.BaseObject, $null))
                     $bitmap.Save((Join-Path $OutputDirectory "gpu$gpuCount-$theme-144dpi.png"), [Drawing.Imaging.ImageFormat]::Png)
+                }
+            }
+            if ($gpuCount -eq 2) {
+                $snapshot.Gpus[0].MemoryUsedBytes = [System.UInt64](24 * 1073741824L)
+                $snapshot.Gpus[1].MemoryUsedBytes = [System.UInt64]1073741824L
+                foreach ($gpu in $snapshot.Gpus) {
+                    $gpu.MemoryTotalBytes = [System.UInt64](24 * 1073741824L)
+                }
+                $snapshot.Gpus[1].TemperatureCelsius = 47
+                try {
+                    $compactSlots = $buildSlots.Invoke($null, [object[]]@($graphics.PSObject.BaseObject, $bitmap.Size,
+                        $font.PSObject.BaseObject, $cpuFont.PSObject.BaseObject,
+                        $settings.PSObject.BaseObject, $snapshot.PSObject.BaseObject, $quota))
+                    $byId = @{}
+                    foreach ($slot in $compactSlots) { $byId[(Slot-Field $slot 'Id')] = $slot }
+                    $unit0 = $byId['gpu0.memory.unit']
+                    $unit1 = $byId['gpu1.memory.unit']
+                    $temp0 = $byId['gpu0.temperature']
+                    $temp1 = $byId['gpu1.temperature']
+                    Assert-Display ((Slot-Field $unit0 'Text') -ceq 'GB' -and (Slot-Field $unit1 'Text') -ceq 'GB' -and
+                        (Slot-Field $unit0 'Bounds').X -eq (Slot-Field $unit1 'Bounds').X) 'Dual GPU memory units are misaligned'
+                    $celsius = [string][char]0x00B0 + 'C'
+                    Assert-Display ((Slot-Field $temp0 'Text') -ceq ('100' + $celsius) -and (Slot-Field $temp1 'Text') -ceq ('47' + $celsius) -and
+                        (Slot-Field $temp0 'Alignment') -eq 'Far' -and (Slot-Field $temp1 'Alignment') -eq 'Far' -and
+                        (Slot-Field $temp0 'Bounds').Right -eq (Slot-Field $temp1 'Bounds').Right) 'Dual GPU Celsius units are misaligned'
+                    Assert-Display ((Slot-Field $byId['gpu0.percent'] 'Text') -ceq '99%' -and
+                        $snapshot.Gpus[0].UsagePercent -eq 100) 'GPU display cap did not preserve the actual reading'
+                } finally {
+                    foreach ($gpu in $snapshot.Gpus) {
+                        $gpu.MemoryUsedBytes = [System.UInt64](999 * 1073741824L)
+                        $gpu.MemoryTotalBytes = $null
+                        $gpu.TemperatureCelsius = 100
+                    }
                 }
             }
         } finally {

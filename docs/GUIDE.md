@@ -13,14 +13,14 @@
 | 双卡 | 上传＋下载 / CPU | GPU0 / GPU1 | 内存 / AI 剩余 |
 | 单卡 | 上传 / 下载 | CPU＋频率 / GPU＋显存 | 内存 / AI 剩余 |
 
-v1.0.1 双卡宽度 520，双卡分列 200 / 208 / 112；单卡总宽 476，分列 140 / 216 / 120。中间硬件列的左 / 右留白分别为 8 / 7 参考像素，文字不贴分隔线。配置中的 `ui.width` 是双卡参考宽度，单卡按 476/520 比例缩短，两种布局右侧对齐。文档图片与 v1.0.1 下载包采用相同的生产绘制代码，使用演示数值，不显示尚未接通的 Kimi。
+双卡宽度为 520，分列 200 / 202 / 118。单卡总宽 476，分列 140 / 216 / 120。配置中的 `ui.width` 是双卡参考宽度，单卡按 476/520 比例缩短。
 
 - 单卡只显示普通字体 `CPU` / `GPU`，两者左对齐，不加显卡编号；中间显示频率，如 `3.8 GHz`。频率 / 显存的数值和单位分开定位，GHz / GB 单位均左对齐，使 G 位于同一竖线；名称与数值槽之间最多留 2 个参考像素。双卡仍显示 GPU0 / GPU1（或配置的别名），CPU 名称固定为 10 个 Consolas 字位：2 位系列、横杠、最多 7 位型号；短型号留空，保留后缀。无法可靠缩写则显示 `CPU`，完整型号始终在悬停提示中。
 - 单卡频率来自现有 LibreHardwareMonitor 0.9.6 的核心 Clock 传感器，显示库报告的各核心最高值；不是平均有效频率，也不保证与任务管理器口径一致。排除总线、平均与 Effective 时钟；不会自行用 WMI 标称频率补值。缺少硬件库 / 可用核心传感器 / 权限，或 Store 构建时显示 `-- GHz`，详情在悬停中。上游传感器有自己的硬件回退策略，不能将此显示声明为独立验证过的实时有效频率。
 - NVIDIA 数量依据 NVML 返回的真实 UUID / PCI 身份，核显、虚拟显示器和采集失败占位不计入。温度缺失不改变布局；枚举暂时失败时保留已知身份并清空读数。超过两块只显示排序后的前两块。
-- 显存、占用率、温度、额度名称和百分比分开定位；9% / 100%、Codex / Kimi 切换不改变槽位或分隔线。CPU / GPU 的占用率和温度在单卡模式上下对齐。
-- 网速箭头、数值、单位也独立定位。Mb / Gb / Tb 分别表示 Mbps / Gbps / Tbps（比特/秒），与测速网页使用相同的十进制单位；1 Mbps = 125,000 字节/秒，达到量级边界时按 1000 进位，避免无限扩张。网速是所选网卡每秒采样的实时流量，不是一次网页测速的汇总结果。显存 GB 仍是 GiB 的紧凑标记，悬停提供精确值。
-- 网速数字不补前导零，例如 `0.16 Mb`、`1.16 Mb`、`12.16 Mb`；数值保持右对齐，单位、箭头和分隔线位置不随位数变化。
+- 双卡显存的 GB 单位上下对齐，两行温度按 °C 右对齐。GPU 占用率在任务栏最多显示 99%，悬停提示保留实际值。CPU / GPU 的占用率和温度在单卡模式上下对齐。
+- 网速箭头紧贴数值，数值与单位在固定宽度内对齐。默认显示 Mb / Gb / Tb（比特/秒），与测速网页使用相同的十进制单位。设置 `network.rateUnit=bytes` 后显示 MB / GB / TB（字节/秒）。两种模式都按 1000 进位。网速是所选网卡每秒采样的实时流量。显存 GB 仍是 GiB 的紧凑标记，悬停提供精确值。
+- 网速数字不补前导零，例如 `0.16 Mb`、`1.16 Mb`、`12.16 Mb`。数值保持右对齐，箭头紧贴数字，单位和分隔线位置不随位数变化。
 - CPU 与内存占用使用 Windows 接口；NVIDIA 显存、占用及温度通过驱动 NVML 读取。CPU 温度使用可选 LibreHardwareMonitor 后端。
 - 额度只表示套餐窗口的剩余百分比，不是会话 token 数、API 限速、账单或钱包余额。
 
@@ -96,7 +96,7 @@ Set-Location .\TaskbarTelemetry
 - 不包含 WinRing0；
 - 不包含或静默安装任何 `.sys` 驱动；
 - 本地版主程序清单为 `requireAdministrator`，双击 EXE 时由 Windows 自动弹出 UAC；商店版仍为 `asInvoker`；
-- 如果 PawnIO 未安装、权限不足或传感器不可读，CPU 温度显示 `--°`，鼠标提示会显示具体原因，其余监控不受影响。
+- 如果 PawnIO 未安装、权限不足或传感器不可读，CPU 温度显示 `--°C`，鼠标提示会显示具体原因。
 
 若确实需要 CPU 温度，只安装 [PawnIO 官网](https://pawnio.eu/)“Download Now”提供的官方签名版：
 
@@ -170,6 +170,7 @@ SendKey 不会写入 INI 或日志；应用使用 Windows 当前用户数据保�
 - `ui.horizontalOffset`、`ui.verticalOffset`：位置微调；
 - `ui.fontFamily`、`ui.fontSize`、`ui.foreground`、`ui.background`：字体与颜色；
 - `network.interfaceId`：留空自动汇总，填写网卡 ID 可固定；
+- `network.rateUnit`：默认 `bits`，显示 Mb/s。改为 `bytes` 并重启应用后显示 MB/s（1 MB = 1,000,000 字节），界面使用紧凑标记 `MB`；
 - `cpu.alias`：留空时通过 Windows WMI 自动识别并缩短 CPU 型号，也可填写同样满足 2+1+7 规则的标签手动覆盖；
 - `gpu.alias0`、`gpu.alias1`：两张卡的短标签，当前为 GPU0/GPU1；
 - `temperature.enabled`、`temperature.libreHardwareMonitorLibrary`：非商店版 CPU 温度开关与库路径；商店构建强制关闭；
@@ -194,7 +195,7 @@ SendKey 不会写入 INI 或日志；应用使用 Windows 当前用户数据保�
 
 运行 `./package-release.ps1`：先构建和测试，再用明确的文件清单生成源码 ZIP、运行包 ZIP 和 SHA-256 清单。只打包默认配置、源码、构建脚本、许可、兼容性文档及演示截图；不包含本机运行状态、密钥、用户路径、Git 历史或开发产物。
 
-兼容边界与尚未完成的真实环境验收见 [兼容性说明](COMPATIBILITY.md) 和 [验收记录](VALIDATION.md)。便携发布包由独立 `package-portable.ps1 -Version 1.0.1 -AcknowledgeIncompleteDesktopValidation` 从干净 Git 提交构建，执行编译、依赖哈希、默认配置、许可、ZIP 解压与逐文件校验；不执行已被系统阻止的诊断探针，也不宣称其通过。独立网速 / 排版检查在 CI 中执行，结果以相应提交的 Actions 记录为准。完整回归入口 `package-release.ps1` 仍在测试失败时停止。
+兼容边界与尚未完成的真实环境验收见 [兼容性说明](COMPATIBILITY.md) 和 [验收记录](VALIDATION.md)。便携发布包由 `package-portable.ps1 -Version 1.0.2 -AcknowledgeIncompleteDesktopValidation` 从干净 Git 提交构建，并验证依赖哈希、默认配置和 ZIP 完整性。独立网速与排版检查在 CI 中执行，结果以相应提交的 Actions 记录为准。
 
 ## 许可证
 

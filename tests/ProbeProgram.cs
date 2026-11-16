@@ -446,8 +446,8 @@ namespace TaskbarTelemetry
             ok &= CheckFormat("rate invalid", TaskbarForm.FormatRate(double.NaN), "--.--");
             ok &= CheckFormat("percent without leading zero", TaskbarForm.FormatPercent(7.0), "7%");
             ok &= CheckFormat("percent one hundred", TaskbarForm.FormatPercent(100.0), "100%");
-            ok &= CheckFormat("temperature without leading zero", TaskbarForm.FormatTemperature(8.0), "8°");
-            ok &= CheckFormat("temperature three digits", TaskbarForm.FormatTemperature(100.0), "100°");
+            ok &= CheckFormat("temperature without leading zero", TaskbarForm.FormatTemperature(8.0), "8°C");
+            ok &= CheckFormat("temperature three digits", TaskbarForm.FormatTemperature(100.0), "100°C");
             ok &= CheckFormat("GPU memory placeholder", TaskbarForm.FormatGpuMemory(null), "--GB");
             ok &= CheckFormat("GPU memory zero", TaskbarForm.FormatGpuMemory(0), "0GB");
             ok &= CheckFormat("GPU memory whole GiB", TaskbarForm.FormatGpuMemory(
@@ -478,8 +478,8 @@ namespace TaskbarTelemetry
             snapshot.Codex.Secondary = new QuotaWindowMetric { UsedPercent = 45.0 };
             snapshot.System.CpuUsagePercent = 7.0;
             snapshot.CpuTemperature.Celsius = 34.0;
-            ok &= CheckFormat("CPU alias", TaskbarForm.BuildCpuText(snapshot, "i9-10980XE"), "i9-10980XE 7% 34°");
-            ok &= CheckFormat("GPU three metrics", TaskbarForm.BuildGpuText(snapshot, 0, "GPU0"), "GPU0 8GB 7% 34°");
+            ok &= CheckFormat("CPU alias", TaskbarForm.BuildCpuText(snapshot, "i9-10980XE"), "i9-10980XE 7% 34°C");
+            ok &= CheckFormat("GPU three metrics", TaskbarForm.BuildGpuText(snapshot, 0, "GPU0"), "GPU0 8GB 7% 34°C");
             ok &= CheckFormat("Codex primary only", TaskbarForm.BuildCodexText(snapshot), "Codex 92%");
             return ok;
         }

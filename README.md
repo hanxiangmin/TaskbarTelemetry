@@ -16,13 +16,13 @@ An open-source **Windows taskbar system monitor** for CPU usage, NVIDIA GPU util
 [![MIT](https://img.shields.io/badge/License-MIT-22C55E?style=flat-square)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/hanxiangmin/TaskbarTelemetry?style=flat-square)](https://github.com/hanxiangmin/TaskbarTelemetry/releases/latest)
 
-### [⬇ 下载 v1.0.1 Windows x64 便携版 · 解压即用](https://github.com/hanxiangmin/TaskbarTelemetry/releases/download/v1.0.1/TaskbarTelemetry-v1.0.1-windows-x64.zip)
+### [⬇ 下载 v1.0.2 Windows x64 便携版 · 解压即用](https://github.com/hanxiangmin/TaskbarTelemetry/releases/download/v1.0.2/TaskbarTelemetry-v1.0.2-windows-x64.zip)
 
 [快速开始](#快速开始) · [界面预览](#两种布局自动适配) · [配置手册](docs/GUIDE.md) · [参与开发](CONTRIBUTING.md) · [反馈问题](https://github.com/hanxiangmin/TaskbarTelemetry/issues)
 
 </div>
 
-> **v1.0.1：展示图与下载包已同步。** 本版包含紧凑布局、Codex 每分钟主动刷新，以及 `Mb` 网速单位 / 去掉前导零的更新。[查看更新说明](docs/releases/v1.0.1.md)。旧版保留在发布历史中。
+> **v1.0.2** 对齐双卡显存单位与温度，CPU / GPU 温度显示为 °C。网速可在 INI 中切换为 MB/s。[查看更新说明](docs/releases/v1.0.2.md)。
 
 ## 少切一次窗口，多看一眼状态
 
@@ -35,7 +35,7 @@ An open-source **Windows taskbar system monitor** for CPU usage, NVIDIA GPU util
 | **CPU / GPU / 内存** | 同时看占用、显存和温度；单卡布局还展示 CPU 核心频率。传感器不可用时明确显示缺失。 |
 | **Codex 剩余额度** | 直接显示套餐窗口的剩余百分比；悬停查看窗口、重置时间、更新时间与数据来源。 |
 | **单卡 / 双卡自动适配** | 按真实 NVIDIA 设备数量选择布局。单卡更紧凑，双卡上下独立显示。 |
-| **双向实时网速** | 上传、下载分开；使用与测速网页一致的 Mb/秒，如 `0.16 Mb`、`12.16 Mb`，不补前导零；默认每秒更新，数值变化不推挤列宽。 |
+| **双向实时网速** | 上传、下载分别显示。默认使用 Mb/s，可通过 `network.rateUnit=bytes` 切换到 MB/s。 |
 | **嵌入任务栏** | 使用任务栏子窗口，不是桌面级置顶悬浮窗；不额外占用 Alt+Tab 位置。 |
 | **可选手机提醒** | Codex 用量跨档提醒，支持 Server酱³ / Turbo；默认关闭，由你主动授权。 |
 
@@ -68,7 +68,7 @@ An open-source **Windows taskbar system monitor** for CPU usage, NVIDIA GPU util
 
 ### 下载后直接运行
 
-1. 下载 [**TaskbarTelemetry-v1.0.1-windows-x64.zip**](https://github.com/hanxiangmin/TaskbarTelemetry/releases/download/v1.0.1/TaskbarTelemetry-v1.0.1-windows-x64.zip)，不要选 `Source code`。
+1. 下载 [**TaskbarTelemetry-v1.0.2-windows-x64.zip**](https://github.com/hanxiangmin/TaskbarTelemetry/releases/download/v1.0.2/TaskbarTelemetry-v1.0.2-windows-x64.zip)。
 2. 右键 ZIP → **全部解压**，保留整个 `TaskbarTelemetry` 文件夹。
 3. 双击 **TaskbarTelemetry.exe**，由你确认 Windows 管理员提示。小工具会出现在任务栏系统托盘左侧，自动识别单卡 / 双卡。
 

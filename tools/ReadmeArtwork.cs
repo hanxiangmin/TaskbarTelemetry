@@ -76,6 +76,7 @@ namespace TaskbarTelemetry
                 foreach (GpuMetric gpu in snapshot.Gpus)
                 {
                     gpu.MemoryUsedBytes = 999UL * 1024 * 1024 * 1024;
+                    gpu.MemoryTotalBytes = gpu.MemoryUsedBytes;
                     gpu.UsagePercent = 100;
                     gpu.TemperatureCelsius = 100;
                 }

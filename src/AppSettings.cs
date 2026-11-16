@@ -17,6 +17,7 @@ namespace TaskbarTelemetry
         public float FontSizePoints { get; private set; }
         public string FontFamily { get; private set; }
         public string NetworkInterfaceId { get; private set; }
+        public bool NetworkRateInBytes { get; private set; }
         public string CodexMode { get; private set; }
         public string CodexCommand { get; private set; }
         public string CodexHome { get; private set; }
@@ -86,6 +87,8 @@ namespace TaskbarTelemetry
             settings.FontSizePoints = GetFloat(values, "ui.fontSize", settings.FontSizePoints, 6.0f, 18.0f);
             settings.FontFamily = GetString(values, "ui.fontFamily", settings.FontFamily);
             settings.NetworkInterfaceId = GetString(values, "network.interfaceId", settings.NetworkInterfaceId);
+            settings.NetworkRateInBytes = string.Equals(GetString(values, "network.rateUnit", "bits"),
+                "bytes", StringComparison.OrdinalIgnoreCase);
             settings.CodexMode = GetString(values, "codex.mode", settings.CodexMode).ToLowerInvariant();
             settings.CodexCommand = GetString(values, "codex.command", settings.CodexCommand);
             settings.CodexHome = GetString(values, "codex.home", settings.CodexHome);
